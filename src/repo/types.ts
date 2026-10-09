@@ -2,7 +2,11 @@ import {
   AccountType,
   AdStatus,
   Announcement,
+  Banner,
   Doctor,
+  FeaturedRequest,
+  FeaturedRequestStatus,
+  FeaturedSettings,
   Lab,
   Listing,
   Pharmacy,
@@ -20,6 +24,11 @@ export type NewUserInput = Omit<User, 'id' | 'createdAt' | 'isAdmin'>;
 export type NewSubscriptionInput = Omit<Subscription, 'id' | 'createdAt'>;
 export type NewProductInput = Omit<Product, 'id' | 'createdAt'>;
 export type NewAnnouncementInput = Omit<Announcement, 'id' | 'createdAt'>;
+export type NewBannerInput = Omit<Banner, 'id' | 'createdAt' | 'active'>;
+export type NewFeaturedRequestInput = Omit<
+  FeaturedRequest,
+  'id' | 'status' | 'startDate' | 'endDate' | 'createdAt'
+>;
 
 export type DoctorEntry = Doctor & { id: string };
 export type PharmacyEntry = Pharmacy & { id: string };
@@ -85,4 +94,24 @@ export interface Repository {
   getAnnouncements(): Announcement[];
   addAnnouncement(input: NewAnnouncementInput): Announcement;
   deleteAnnouncement(id: string): void;
+
+  // بانرات الواجهة
+  getBanners(): Banner[];
+  getActiveBanners(): Banner[];
+  addBanner(input: NewBannerInput): Banner;
+  toggleBanner(id: string): void;
+  deleteBanner(id: string): void;
+
+  // إعلانات مميزة مدفوعة
+  getFeaturedRequests(): FeaturedRequest[];
+  getActiveFeatured(): FeaturedRequest[];
+  addFeaturedRequest(input: NewFeaturedRequestInput): FeaturedRequest;
+  updateFeaturedRequestStatus(
+    id: string,
+    status: FeaturedRequestStatus,
+    startDate?: number,
+    endDate?: number,
+  ): void;
+  getFeaturedSettings(): FeaturedSettings;
+  updateFeaturedSettings(s: FeaturedSettings): void;
 }

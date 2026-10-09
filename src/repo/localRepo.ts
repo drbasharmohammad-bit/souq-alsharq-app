@@ -9,7 +9,11 @@ import {
   AccountType,
   AdStatus,
   Announcement,
+  Banner,
   Doctor,
+  FeaturedRequest,
+  FeaturedRequestStatus,
+  FeaturedSettings,
   Lab,
   Listing,
   Pharmacy,
@@ -23,6 +27,8 @@ import {
   LabEntry,
   ListingFilter,
   NewAnnouncementInput,
+  NewBannerInput,
+  NewFeaturedRequestInput,
   NewListingInput,
   NewProductInput,
   NewStoreInput,
@@ -47,6 +53,9 @@ export class LocalRepo implements Repository {
   private subscriptions: Subscription[] = [];
   private products: Product[] = [];
   private announcements: Announcement[] = [];
+  private banners: Banner[] = [];
+  private featured: FeaturedRequest[] = [];
+  private featuredSettings: FeaturedSettings = { price: 0, durationDays: 7 };
 
   private listeners = new Set<() => void>();
   subscribe(fn: () => void): () => void {
@@ -298,6 +307,93 @@ export class LocalRepo implements Repository {
 
   deleteAnnouncement(id: string): void {
     this.announcements = this.announcements.filter(a => a.id !== id);
+    this.emit();
+  }
+
+  // ——— بانرات الواجهة ———
+  getBanners(): Banner[] {
+    return [...this.banners].sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  getActiveBanners(): Banner[] {
+    return this.banners
+      .filter(b => b.active)
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  addBanner(input: NewBannerInput): Banner {
+    const b: Banner = { ...input, id: nid('bnr'), active: true, createdAt: Date.now() };
+    this.banners.unshift(b);
+    this.emit();
+    return b;
+  }
+
+  toggleBanner(id: string): void {
+    const b = this.banners.find(x => x.id === id);
+    if (b) {
+      b.active = !b.active;
+      this.emit();
+    }
+  }
+
+  deleteBanner(id: string): void {
+    this.banners = this.banners.filter(b => b.id !== id);
+    this.emit();
+  }
+
+  // ——— إعلانات مميزة مدفوعة ———
+  getFeaturedRequests(): FeaturedRequest[] {
+    return [...this.featured].sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  getActiveFeatured(): FeaturedRequest[] {
+    const now = Date.now();
+    let changed = false;
+    this.featured.forEach(f => {
+      if (f.status === 'active' && f.endDate && f.endDate <= now) {
+        f.status = 'expired';
+        changed = true;
+      }
+    });
+    if (changed) this.emit();
+    return this.featured
+      .filter(f => f.status === 'active' && (!f.endDate || f.endDate > now))
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  addFeaturedRequest(input: NewFeaturedRequestInput): FeaturedRequest {
+    const f: FeaturedRequest = {
+      ...input,
+      id: nid('feat'),
+      status: 'pending',
+      createdAt: Date.now(),
+    };
+    this.featured.unshift(f);
+    this.emit();
+    return f;
+  }
+
+  updateFeaturedRequestStatus(
+    id: string,
+    status: FeaturedRequestStatus,
+    startDate?: number,
+    endDate?: number,
+  ): void {
+    const f = this.featured.find(x => x.id === id);
+    if (f) {
+      f.status = status;
+      if (startDate !== undefined) f.startDate = startDate;
+      if (endDate !== undefined) f.endDate = endDate;
+      this.emit();
+    }
+  }
+
+  getFeaturedSettings(): FeaturedSettings {
+    return { ...this.featuredSettings };
+  }
+
+  updateFeaturedSettings(s: FeaturedSettings): void {
+    this.featuredSettings = { ...s };
     this.emit();
   }
 }

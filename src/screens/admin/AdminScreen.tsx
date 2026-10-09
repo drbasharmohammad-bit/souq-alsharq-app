@@ -32,6 +32,8 @@ export function AdminScreen({ navigation }: Props) {
   const pendingSubs = repo.getSubscriptions().filter(s => s.status === 'pending').length;
   const usersCount = repo.getUsers().length;
   const annsCount = repo.getAnnouncements().length;
+  const bannersCount = repo.getBanners().filter(b => b.active).length;
+  const pendingFeat = repo.getFeaturedRequests().filter(f => f.status === 'pending').length;
 
   const stats = [
     { icon: 'store', n: stores, t: 'المتاجر' },
@@ -77,6 +79,24 @@ export function AdminScreen({ navigation }: Props) {
         <View style={styles.btnRow}>
           <AppIcon name="bullhorn" size={18} color={colors.white} />
           <Text style={styles.btnText}>الإعلانات الإدارية ({annsCount})</Text>
+        </View>
+      </Pressable>
+      <Pressable style={[styles.btn, styles.btnInfo]} onPress={() => navigation.navigate('AdminBanners')}>
+        <View style={styles.btnRow}>
+          <AppIcon name="image-multiple" size={18} color={colors.white} />
+          <Text style={styles.btnText}>بانرات الواجهة ({bannersCount})</Text>
+        </View>
+      </Pressable>
+      <Pressable style={[styles.btn, styles.btnGold]} onPress={() => navigation.navigate('AdminFeatured')}>
+        <View style={styles.btnRow}>
+          <AppIcon name="star" size={18} color={colors.white} />
+          <Text style={styles.btnText}>الإعلانات المميزة {pendingFeat > 0 ? `(${pendingFeat})` : ''}</Text>
+        </View>
+      </Pressable>
+      <Pressable style={[styles.btn, styles.btnInfo]} onPress={() => navigation.navigate('AdminFeaturedSettings')}>
+        <View style={styles.btnRow}>
+          <AppIcon name="cog" size={18} color={colors.white} />
+          <Text style={styles.btnText}>إعدادات التمييز</Text>
         </View>
       </Pressable>
       <Pressable style={[styles.btn, styles.btnInfo]} onPress={() => navigation.navigate('AdminMedical')}>

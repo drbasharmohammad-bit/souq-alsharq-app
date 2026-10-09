@@ -7,6 +7,9 @@ import { RepoProvider } from '../repo/RepoContext';
 import { MedicalAdminScreen } from '../screens/admin/MedicalAdminScreen';
 import { AdminScreen } from '../screens/admin/AdminScreen';
 import { AnnouncementsAdminScreen } from '../screens/admin/AnnouncementsAdminScreen';
+import { BannersAdminScreen } from '../screens/admin/BannersAdminScreen';
+import { FeaturedReviewScreen } from '../screens/admin/FeaturedReviewScreen';
+import { FeaturedSettingsScreen } from '../screens/admin/FeaturedSettingsScreen';
 import { ReviewScreen } from '../screens/admin/ReviewScreen';
 import { SubscriptionReviewScreen } from '../screens/admin/SubscriptionReviewScreen';
 import { UsersAdminScreen } from '../screens/admin/UsersAdminScreen';
@@ -19,6 +22,7 @@ import { DetailScreen } from '../screens/DetailScreen';
 import { ListingsScreen } from '../screens/ListingsScreen';
 import { MedicalScreen } from '../screens/MedicalScreen';
 import { AddProductScreen } from '../screens/merchant/AddProductScreen';
+import { FeaturedAdScreen } from '../screens/merchant/FeaturedAdScreen';
 import { StoreProductsScreen } from '../screens/merchant/StoreProductsScreen';
 import { MyAdsScreen } from '../screens/MyAdsScreen';
 import { PublishFormScreen } from '../screens/publish/PublishFormScreen';
@@ -66,6 +70,7 @@ export function RootNavigator() {
               {/* منتجات التاجر */}
               <Stack.Screen name="StoreProducts" component={StoreProductsScreen} options={{ title: 'أصناف المتجر' }} />
               <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ title: 'إضافة صنف' }} />
+              <Stack.Screen name="FeaturedAd" component={FeaturedAdScreen} options={{ title: 'إعلان مميز' }} />
               {/* الاشتراك والإدارة */}
               <Stack.Screen name="Subscription" component={SubscriptionScreen} options={{ title: 'الاشتراك' }} />
               <Stack.Screen name="Admin" component={AdminScreen} options={{ title: 'لوحة الإدارة' }} />
@@ -74,6 +79,9 @@ export function RootNavigator() {
               <Stack.Screen name="AdminSubs" component={SubscriptionReviewScreen} options={{ title: 'مراجعة الإيصالات' }} />
               <Stack.Screen name="AdminUsers" component={UsersAdminScreen} options={{ title: 'إدارة المستخدمين' }} />
               <Stack.Screen name="AdminAnnouncements" component={AnnouncementsAdminScreen} options={{ title: 'الإعلانات الإدارية' }} />
+              <Stack.Screen name="AdminBanners" component={BannersAdminScreen} options={{ title: 'بانرات الواجهة' }} />
+              <Stack.Screen name="AdminFeatured" component={FeaturedReviewScreen} options={{ title: 'الإعلانات المميزة' }} />
+              <Stack.Screen name="AdminFeaturedSettings" component={FeaturedSettingsScreen} options={{ title: 'إعدادات التمييز' }} />
               <Stack.Screen name="Announcements" component={AnnouncementsScreen} options={{ title: 'إعلانات الإدارة' }} />
             </Stack.Navigator>
           </NavigationContainer>

@@ -96,6 +96,9 @@ export function AccountScreen({ navigation }: Props) {
         {isMerchant && (
           <Row icon="credit-card" label="اشتراك المتجر" onPress={() => navigation.navigate('Subscription')} />
         )}
+        {isMerchant && (
+          <Row icon="star" label="ميّز إعلانك بالبانر الرئيسي" onPress={() => navigation.navigate('FeaturedAd')} />
+        )}
         {user.isAdmin && (
           <Row icon="shield-account" label="لوحة الإدارة" onPress={() => navigation.navigate('Admin')} />
         )}

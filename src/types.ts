@@ -95,6 +95,38 @@ export interface Announcement {
   createdAt: number;
 }
 
+export type BannerTargetType = 'section' | 'store' | 'announcement' | null;
+
+export interface Banner {
+  id: string;
+  title: string;
+  subtitle?: string;
+  imageUri: string;
+  targetType?: BannerTargetType;
+  targetId?: string;
+  active: boolean;
+  createdAt: number;
+}
+
+export type FeaturedRequestStatus = 'pending' | 'active' | 'rejected' | 'expired';
+
+export interface FeaturedRequest {
+  id: string;
+  storeId: string;
+  userId: string;
+  imageUri: string;
+  receiptUri?: string;
+  status: FeaturedRequestStatus;
+  startDate?: number;
+  endDate?: number;
+  createdAt: number;
+}
+
+export interface FeaturedSettings {
+  price: number;
+  durationDays: number;
+}
+
 export interface Store {
   id: string;
   name: string;

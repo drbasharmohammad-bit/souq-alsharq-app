@@ -36,5 +36,10 @@ export type RootStackParamList = {
   AdminSubs: undefined;
   AdminUsers: undefined;
   AdminAnnouncements: undefined;
+  AdminBanners: undefined;
+  AdminFeatured: undefined;
+  AdminFeaturedSettings: undefined;
   Announcements: undefined;
+  // التاجر: إعلان مميز
+  FeaturedAd: undefined;
 };
