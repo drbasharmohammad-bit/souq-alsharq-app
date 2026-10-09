@@ -126,3 +126,6 @@ dependencies {
 
 // تضمين خطوط react-native-vector-icons في الـAPK
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
+
+// Firebase Google Services
+apply plugin: "com.google.gms.google-services"

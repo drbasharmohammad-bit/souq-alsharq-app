@@ -1,10 +1,11 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
 import { FormField } from '../../components/FormField';
 import { useAuth } from '../../context/AuthContext';
 import { RootStackParamList } from '../../navigation/types';
+import { deleteRemoteAnnouncement, publishRemoteAnnouncement, useAnnouncements } from '../../repo/announcements';
 import { useRepo } from '../../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../../theme';
 import { formatDateTime } from '../../utils/format';
@@ -16,8 +17,9 @@ export function AnnouncementsAdminScreen({}: Props) {
   const repo = useRepo();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [sending, setSending] = useState(false);
 
-  const items = useMemo(() => repo.getAnnouncements(), [repo]);
+  const { items, refresh } = useAnnouncements();
 
   if (!user?.isAdmin) {
     return (
@@ -30,21 +32,46 @@ export function AnnouncementsAdminScreen({}: Props) {
     );
   }
 
-  const publish = () => {
+  const publish = async () => {
     if (!title.trim() || !body.trim()) {
       Alert.alert('تنبيه', 'أدخل العنوان والنص');
       return;
     }
-    repo.addAnnouncement({ title: title.trim(), body: body.trim() });
-    setTitle('');
-    setBody('');
-    Alert.alert('تم', 'نُشر الإعلان لجميع المستخدمين');
+    const input = { title: title.trim(), body: body.trim() };
+    setSending(true);
+    try {
+      await publishRemoteAnnouncement(input);
+      repo.addAnnouncement(input);
+      setTitle('');
+      setBody('');
+      await refresh();
+      Alert.alert('تم', 'نُشر الإعلان لجميع المستخدمين');
+    } catch {
+      repo.addAnnouncement(input);
+      setTitle('');
+      setBody('');
+      Alert.alert('تنبيه', 'تعذّر النشر السحابي — حُفظ الإعلان محليًا فقط');
+    } finally {
+      setSending(false);
+    }
   };
 
   const remove = (id: string) => {
     Alert.alert('حذف الإعلان', 'متأكد من حذف هذا الإعلان؟', [
       { text: 'إلغاء', style: 'cancel' },
-      { text: 'حذف', style: 'destructive', onPress: () => repo.deleteAnnouncement(id) },
+      {
+        text: 'حذف',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteRemoteAnnouncement(id);
+          } catch {
+            // تجاهل — يُحذف محليًا على الأقل
+          }
+          repo.deleteAnnouncement(id);
+          await refresh();
+        },
+      },
     ]);
   };
 
@@ -60,10 +87,10 @@ export function AnnouncementsAdminScreen({}: Props) {
           placeholder="نص الإعلان..."
           multiline
         />
-        <Pressable style={styles.btn} onPress={publish}>
+        <Pressable style={[styles.btn, sending && styles.btnDisabled]} onPress={publish} disabled={sending}>
           <View style={styles.btnRow}>
             <AppIcon name="bullhorn" size={18} color={colors.white} />
-            <Text style={styles.btnText}>نشر الإعلان</Text>
+            <Text style={styles.btnText}>{sending ? 'جارٍ النشر...' : 'نشر الإعلان'}</Text>
           </View>
         </Pressable>
       </View>
@@ -102,6 +129,7 @@ const styles = StyleSheet.create({
   form: { backgroundColor: colors.card, margin: spacing.md, borderRadius: radius.md, padding: spacing.md, elevation: 1 },
   formTitle: { fontSize: fontSize.md, fontWeight: '800', color: colors.text, marginBottom: spacing.sm },
   btn: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.sm },
+  btnDisabled: { opacity: 0.6 },
   btnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xl },

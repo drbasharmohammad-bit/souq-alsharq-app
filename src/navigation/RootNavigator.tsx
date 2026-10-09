@@ -1,4 +1,5 @@
 import { NavigationContainer } from '@react-navigation/native';
+import { navigationRef } from './navigationRef';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import { AuthProvider } from '../context/AuthContext';
@@ -43,7 +44,7 @@ export function RootNavigator() {
     <RepoProvider>
       <AuthProvider>
         <FavoritesProvider>
-          <NavigationContainer>
+          <NavigationContainer ref={navigationRef}>
             <Stack.Navigator
               screenOptions={{
                 headerStyle: { backgroundColor: colors.primary },

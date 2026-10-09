@@ -1,17 +1,16 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useMemo } from 'react';
+import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../components/AppIcon';
 import { RootStackParamList } from '../navigation/types';
-import { useRepo } from '../repo/RepoContext';
+import { useAnnouncements } from '../repo/announcements';
 import { colors, fontSize, radius, spacing } from '../theme';
 import { formatDateTime } from '../utils/format';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Announcements'>;
 
 export function AnnouncementsScreen({}: Props) {
-  const repo = useRepo();
-  const items = useMemo(() => repo.getAnnouncements(), [repo]);
+  const { items } = useAnnouncements();
 
   return (
     <View style={styles.root}>

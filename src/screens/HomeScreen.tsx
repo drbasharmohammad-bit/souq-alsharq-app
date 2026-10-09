@@ -10,6 +10,7 @@ import { ListingCard } from '../components/ListingCard';
 import { PlaceholderImage } from '../components/PlaceholderImage';
 import { GOVS, SECTIONS } from '../data';
 import { RootStackParamList, TabsParamList } from '../navigation/types';
+import { useAnnouncements } from '../repo/announcements';
 import { useRepo } from '../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../theme';
 import { Banner as BannerT } from '../types';
@@ -43,7 +44,8 @@ export function HomeScreen({ navigation }: Props) {
     repo.getActiveFeatured(); // تنظيف المنتهية
   }, [repo]);
 
-  const latestAnn = useMemo(() => repo.getAnnouncements()[0], [repo]);
+  const { items: remoteAnns } = useAnnouncements();
+  const latestAnn = (remoteAnns.length > 0 ? remoteAnns : repo.getAnnouncements())[0];
   const showAnn = latestAnn && latestAnn.id !== dismissedId;
 
   // عناصر الكاروسيل: مميزة مدفوعة أولًا، ثم بانرات الإدارة، ثم الافتراضية

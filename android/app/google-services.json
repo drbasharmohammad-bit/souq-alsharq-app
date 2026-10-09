@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "885355670157",
+    "project_id": "souq-alsharq-app",
+    "storage_bucket": "souq-alsharq-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:885355670157:android:5f8332f244b1e37d3190c4",
+        "android_client_info": {
+          "package_name": "sy.medpro.sharq"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDi8kGqsMQEQQgptjtJB5VemS73gxj_Emg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
