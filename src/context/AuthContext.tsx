@@ -37,7 +37,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               saved.phone === ADMIN_PHONE,
             );
           }
-          setUser(u);
+          // المحظور لا تُستعاد جلسته
+          if (u.blocked) {
+            await AsyncStorage.removeItem(KEY);
+          } else {
+            setUser(u);
+          }
         }
       } catch {
         // تجاهل
@@ -52,6 +57,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       let u = repo.getUserByPhone(phone);
       if (!u) {
         u = repo.addUser({ phone, accountType }, phone === ADMIN_PHONE);
+      }
+      if (u.blocked) {
+        throw new Error('تم حظر هذا الحساب — تواصل مع إدارة التطبيق');
       }
       setUser(u);
       await AsyncStorage.setItem(KEY, JSON.stringify(u));

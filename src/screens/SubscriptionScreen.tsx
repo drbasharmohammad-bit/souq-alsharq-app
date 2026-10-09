@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../components/AppIcon';
+import { ImagePickerField } from '../components/ImagePickerField';
 import { useAuth } from '../context/AuthContext';
 import { useRepo } from '../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../theme';
@@ -14,23 +15,24 @@ const STEPS = [
 export function SubscriptionScreen() {
   const { user } = useAuth();
   const repo = useRepo();
-  const [picked, setPicked] = useState(false);
+  const [receipt, setReceipt] = useState<string[]>([]);
 
   const sub = user ? repo.getUserSubscription(user.id) : undefined;
 
   const upload = () => {
-    // وهمي: اختيار صورة — في النسخة النهائية image-picker حقيقي
-    Alert.alert('اختيار صورة', 'في النسخة النهائية ستفتح معرض الصور هنا', [
-      { text: 'إلغاء', style: 'cancel' },
-      {
-        text: 'اختيار صورة تجريبية',
-        onPress: () => {
-          if (!user) return;
-          repo.addSubscription({ userId: user.id, storeId: user.storeId, plan: 'monthly', status: 'pending' });
-          setPicked(true);
-        },
-      },
-    ]);
+    if (!user) return;
+    if (receipt.length === 0) {
+      Alert.alert('تنبيه', 'اختر صورة الإيصال أولًا');
+      return;
+    }
+    repo.addSubscription({
+      userId: user.id,
+      storeId: user.storeId,
+      plan: 'monthly',
+      status: 'pending',
+      receiptUri: receipt[0],
+    });
+    setReceipt([]);
   };
 
   if (user?.accountType !== 'merchant') {
@@ -52,15 +54,21 @@ export function SubscriptionScreen() {
       </View>
 
       {sub && (
-        <View style={[styles.statusBox, sub.status === 'active' ? styles.ok : styles.wait]}>
+        <View style={[styles.statusBox, sub.status === 'active' ? styles.ok : sub.status === 'rejected' ? styles.bad : styles.wait]}>
           <View style={styles.statusRow}>
             <AppIcon
-              name={sub.status === 'active' ? 'check-circle' : sub.status === 'pending' ? 'clock' : 'close-circle'}
+              name={sub.status === 'active' ? 'check-circle' : sub.status === 'pending' ? 'clock' : sub.status === 'rejected' ? 'close-circle' : 'alert-circle'}
               size={20}
-              color={sub.status === 'active' ? colors.verifiedText : sub.status === 'pending' ? '#8A6D14' : colors.danger}
+              color={sub.status === 'active' ? colors.verifiedText : sub.status === 'rejected' ? colors.danger : '#8A6D14'}
             />
             <Text style={styles.statusText}>
-              {sub.status === 'active' ? 'اشتراكك مفعّل' : sub.status === 'pending' ? 'اشتراكك قيد المراجعة' : 'الاشتراك منتهي'}
+              {sub.status === 'active'
+                ? 'اشتراكك مفعّل'
+                : sub.status === 'pending'
+                  ? 'اشتراكك قيد المراجعة'
+                  : sub.status === 'rejected'
+                    ? 'رُفض الإيصال — تواصل مع الإدارة'
+                    : 'الاشتراك منتهي'}
             </Text>
           </View>
         </View>
@@ -98,18 +106,14 @@ export function SubscriptionScreen() {
         </View>
       ))}
 
+      <ImagePickerField images={receipt} onChange={setReceipt} max={1} label="صورة الإيصال" />
+
       <Pressable style={styles.btn} onPress={upload}>
         <View style={styles.btnRow}>
           <AppIcon name="upload" size={18} color={colors.white} />
           <Text style={styles.btnText}>رفع إيصال</Text>
         </View>
       </Pressable>
-      {picked && (
-        <View style={styles.pickedRow}>
-          <AppIcon name="check-circle" size={18} color={colors.verifiedText} />
-          <Text style={styles.picked}>تم رفع الإيصال — قيد المراجعة</Text>
-        </View>
-      )}
     </ScrollView>
   );
 }
@@ -126,6 +130,7 @@ const styles = StyleSheet.create({
   statusBox: { borderRadius: radius.md, padding: spacing.md, marginTop: spacing.md, alignItems: 'center' },
   ok: { backgroundColor: colors.verifiedBg },
   wait: { backgroundColor: '#FFF4D6' },
+  bad: { backgroundColor: '#FDE8E8' },
   statusText: { fontWeight: '800', fontSize: fontSize.md, color: colors.text },
   plan: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.lg, marginTop: spacing.md, borderWidth: 1, borderColor: colors.border },
   planPro: { borderColor: colors.gold, borderWidth: 2 },

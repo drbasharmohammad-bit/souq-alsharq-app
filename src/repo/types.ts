@@ -1,6 +1,7 @@
 import {
   AccountType,
   AdStatus,
+  Announcement,
   Doctor,
   Lab,
   Listing,
@@ -18,6 +19,7 @@ export type NewStoreInput = Omit<Store, 'id'>;
 export type NewUserInput = Omit<User, 'id' | 'createdAt' | 'isAdmin'>;
 export type NewSubscriptionInput = Omit<Subscription, 'id' | 'createdAt'>;
 export type NewProductInput = Omit<Product, 'id' | 'createdAt'>;
+export type NewAnnouncementInput = Omit<Announcement, 'id' | 'createdAt'>;
 
 export type DoctorEntry = Doctor & { id: string };
 export type PharmacyEntry = Pharmacy & { id: string };
@@ -48,8 +50,11 @@ export interface Repository {
 
   // مستخدمون
   getUserByPhone(phone: string): User | undefined;
+  getUserById(id: string): User | undefined;
+  getUsers(): User[];
   addUser(input: NewUserInput, isAdmin: boolean): User;
   linkStoreToUser(phone: string, storeId: string): void;
+  setUserBlocked(id: string, blocked: boolean): void;
 
   // الدليل الطبي (إدارة حصرًا)
   getDoctors(): DoctorEntry[];
@@ -75,4 +80,9 @@ export interface Repository {
   getProductsByStore(storeId: string): Product[];
   addProduct(input: NewProductInput): Product;
   deleteProduct(id: string): void;
+
+  // إعلانات إدارية
+  getAnnouncements(): Announcement[];
+  addAnnouncement(input: NewAnnouncementInput): Announcement;
+  deleteAnnouncement(id: string): void;
 }

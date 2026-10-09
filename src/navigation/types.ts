@@ -33,4 +33,8 @@ export type RootStackParamList = {
   Admin: undefined;
   AdminReview: undefined;
   AdminMedical: undefined;
+  AdminSubs: undefined;
+  AdminUsers: undefined;
+  AdminAnnouncements: undefined;
+  Announcements: undefined;
 };

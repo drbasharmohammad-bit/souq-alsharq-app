@@ -29,6 +29,9 @@ export function AdminScreen({ navigation }: Props) {
   const listings = repo.getListings().length;
   const pending = repo.getListings({ status: 'pending' }).length;
   const subs = repo.getSubscriptions().length;
+  const pendingSubs = repo.getSubscriptions().filter(s => s.status === 'pending').length;
+  const usersCount = repo.getUsers().length;
+  const annsCount = repo.getAnnouncements().length;
 
   const stats = [
     { icon: 'store', n: stores, t: 'المتاجر' },
@@ -56,6 +59,24 @@ export function AdminScreen({ navigation }: Props) {
         <View style={styles.btnRow}>
           <AppIcon name="clock" size={18} color={colors.white} />
           <Text style={styles.btnText}>مراجعة الإعلانات {pending > 0 ? `(${pending})` : ''}</Text>
+        </View>
+      </Pressable>
+      <Pressable style={[styles.btn, styles.btnGold]} onPress={() => navigation.navigate('AdminSubs')}>
+        <View style={styles.btnRow}>
+          <AppIcon name="receipt" size={18} color={colors.white} />
+          <Text style={styles.btnText}>مراجعة إيصالات الاشتراكات {pendingSubs > 0 ? `(${pendingSubs})` : ''}</Text>
+        </View>
+      </Pressable>
+      <Pressable style={[styles.btn, styles.btnInfo]} onPress={() => navigation.navigate('AdminUsers')}>
+        <View style={styles.btnRow}>
+          <AppIcon name="account-group" size={18} color={colors.white} />
+          <Text style={styles.btnText}>إدارة المستخدمين ({usersCount})</Text>
+        </View>
+      </Pressable>
+      <Pressable style={[styles.btn, styles.btnInfo]} onPress={() => navigation.navigate('AdminAnnouncements')}>
+        <View style={styles.btnRow}>
+          <AppIcon name="bullhorn" size={18} color={colors.white} />
+          <Text style={styles.btnText}>الإعلانات الإدارية ({annsCount})</Text>
         </View>
       </Pressable>
       <Pressable style={[styles.btn, styles.btnInfo]} onPress={() => navigation.navigate('AdminMedical')}>
@@ -86,6 +107,7 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: fontSize.sm, color: colors.textMuted, marginTop: 2 },
   btn: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.lg, width: '100%', alignItems: 'center' },
   btnInfo: { backgroundColor: colors.info },
+  btnGold: { backgroundColor: colors.gold },
   btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
   deniedWrap: { alignItems: 'center', marginTop: 80, gap: 8 },
   denied: { textAlign: 'center', fontSize: fontSize.lg, color: colors.danger, fontWeight: '700' },

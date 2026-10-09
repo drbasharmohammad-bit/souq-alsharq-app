@@ -1,7 +1,8 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { CompositeScreenProps } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useMemo, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../components/AppIcon';
 import { GovChips } from '../components/GovChips';
@@ -25,7 +26,26 @@ const BANNERS = [
 
 export function HomeScreen({ navigation }: Props) {
   const [gov, setGov] = useState('الكل');
+  const [dismissedId, setDismissedId] = useState<string | null>(null);
   const repo = useRepo();
+
+  useEffect(() => {
+    AsyncStorage.getItem('sharq_ann_dismissed').then(v => setDismissedId(v));
+  }, []);
+
+  const latestAnn = useMemo(() => repo.getAnnouncements()[0], [repo]);
+  const showAnn = latestAnn && latestAnn.id !== dismissedId;
+
+  const dismissAnn = async () => {
+    if (latestAnn) {
+      setDismissedId(latestAnn.id);
+      try {
+        await AsyncStorage.setItem('sharq_ann_dismissed', latestAnn.id);
+      } catch {
+        // تجاهل
+      }
+    }
+  };
 
   const featured = useMemo(
     () => repo.getListings({ gov, status: 'approved' }).slice(0, 6),
@@ -56,6 +76,20 @@ export function HomeScreen({ navigation }: Props) {
       </View>
 
       <GovChips govs={GOVS} selected={gov} onSelect={setGov} />
+
+      {/* بانر الإعلانات الإدارية */}
+      {showAnn && latestAnn && (
+        <View style={styles.annBanner}>
+          <AppIcon name="bullhorn" size={24} color={colors.white} />
+          <Pressable style={styles.annBody} onPress={() => navigation.navigate('Announcements')}>
+            <Text style={styles.annTitle} numberOfLines={1}>{latestAnn.title}</Text>
+            <Text style={styles.annText} numberOfLines={2}>{latestAnn.body}</Text>
+          </Pressable>
+          <Pressable onPress={dismissAnn} hitSlop={10} style={styles.annClose}>
+            <AppIcon name="close" size={18} color={colors.white} />
+          </Pressable>
+        </View>
+      )}
 
       {/* البانر */}
       <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.bannerWrap}>
@@ -143,6 +177,20 @@ const styles = StyleSheet.create({
   searchHint: { color: colors.textMuted, fontSize: fontSize.sm, flex: 1 },
   hidden: { display: 'none' },
   bannerWrap: { marginTop: spacing.md },
+  annBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.info,
+    borderRadius: radius.md,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  annBody: { flex: 1 },
+  annTitle: { fontSize: fontSize.md, fontWeight: '800', color: colors.white },
+  annText: { fontSize: fontSize.sm, color: colors.white, opacity: 0.92, marginTop: 2 },
+  annClose: { padding: 4 },
   banner: {
     width: 320,
     borderRadius: radius.lg,

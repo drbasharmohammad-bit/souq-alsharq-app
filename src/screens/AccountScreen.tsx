@@ -89,6 +89,7 @@ export function AccountScreen({ navigation }: Props) {
 
       <View style={styles.menu}>
         <Row icon="format-list-bulleted" label="إعلاناتي" onPress={() => navigation.navigate('MyAds')} />
+        <Row icon="bullhorn" label="إعلانات الإدارة" onPress={() => navigation.navigate('Announcements')} />
         {isMerchant && (
           <Row icon="package-variant" label="أصناف متجري" onPress={() => navigation.navigate('StoreProducts')} />
         )}

@@ -30,8 +30,8 @@ export function AccountTypeScreen({ navigation, route }: Props) {
       } else {
         navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
       }
-    } catch {
-      Alert.alert('خطأ', 'تعذر تسجيل الدخول');
+    } catch (e) {
+      Alert.alert('تعذر الدخول', e instanceof Error ? e.message : 'تعذر تسجيل الدخول');
     }
   };
 

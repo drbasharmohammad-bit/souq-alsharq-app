@@ -74,6 +74,7 @@ export interface User {
   accountType: AccountType;
   storeId?: string;
   isAdmin: boolean;
+  blocked?: boolean;
   createdAt: number;
 }
 
@@ -82,7 +83,15 @@ export interface Subscription {
   userId: string;
   storeId?: string;
   plan: 'free' | 'monthly';
-  status: 'active' | 'pending' | 'expired';
+  status: 'active' | 'pending' | 'expired' | 'rejected';
+  receiptUri?: string;
+  createdAt: number;
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  body: string;
   createdAt: number;
 }
 

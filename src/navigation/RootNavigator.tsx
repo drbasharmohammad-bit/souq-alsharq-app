@@ -6,7 +6,11 @@ import { FavoritesProvider } from '../context/FavoritesContext';
 import { RepoProvider } from '../repo/RepoContext';
 import { MedicalAdminScreen } from '../screens/admin/MedicalAdminScreen';
 import { AdminScreen } from '../screens/admin/AdminScreen';
+import { AnnouncementsAdminScreen } from '../screens/admin/AnnouncementsAdminScreen';
 import { ReviewScreen } from '../screens/admin/ReviewScreen';
+import { SubscriptionReviewScreen } from '../screens/admin/SubscriptionReviewScreen';
+import { UsersAdminScreen } from '../screens/admin/UsersAdminScreen';
+import { AnnouncementsScreen } from '../screens/AnnouncementsScreen';
 import { AccountTypeScreen } from '../screens/auth/AccountTypeScreen';
 import { CreateStoreScreen } from '../screens/auth/CreateStoreScreen';
 import { OtpScreen } from '../screens/auth/OtpScreen';
@@ -67,6 +71,10 @@ export function RootNavigator() {
               <Stack.Screen name="Admin" component={AdminScreen} options={{ title: 'لوحة الإدارة' }} />
               <Stack.Screen name="AdminReview" component={ReviewScreen} options={{ title: 'مراجعة الإعلانات' }} />
               <Stack.Screen name="AdminMedical" component={MedicalAdminScreen} options={{ title: 'الدليل الطبي' }} />
+              <Stack.Screen name="AdminSubs" component={SubscriptionReviewScreen} options={{ title: 'مراجعة الإيصالات' }} />
+              <Stack.Screen name="AdminUsers" component={UsersAdminScreen} options={{ title: 'إدارة المستخدمين' }} />
+              <Stack.Screen name="AdminAnnouncements" component={AnnouncementsAdminScreen} options={{ title: 'الإعلانات الإدارية' }} />
+              <Stack.Screen name="Announcements" component={AnnouncementsScreen} options={{ title: 'إعلانات الإدارة' }} />
             </Stack.Navigator>
           </NavigationContainer>
         </FavoritesProvider>

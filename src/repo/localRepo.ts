@@ -8,6 +8,7 @@ import {
 import {
   AccountType,
   AdStatus,
+  Announcement,
   Doctor,
   Lab,
   Listing,
@@ -21,6 +22,7 @@ import {
   DoctorEntry,
   LabEntry,
   ListingFilter,
+  NewAnnouncementInput,
   NewListingInput,
   NewProductInput,
   NewStoreInput,
@@ -44,6 +46,7 @@ export class LocalRepo implements Repository {
   private labs: LabEntry[];
   private subscriptions: Subscription[] = [];
   private products: Product[] = [];
+  private announcements: Announcement[] = [];
 
   private listeners = new Set<() => void>();
   subscribe(fn: () => void): () => void {
@@ -135,6 +138,22 @@ export class LocalRepo implements Repository {
   // ——— مستخدمون ———
   getUserByPhone(phone: string): User | undefined {
     return this.users.find(u => u.phone === phone);
+  }
+
+  getUserById(id: string): User | undefined {
+    return this.users.find(u => u.id === id);
+  }
+
+  getUsers(): User[] {
+    return [...this.users].sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  setUserBlocked(id: string, blocked: boolean): void {
+    const u = this.users.find(x => x.id === id);
+    if (u) {
+      u.blocked = blocked;
+      this.emit();
+    }
   }
 
   addUser(input: NewUserInput, isAdmin: boolean): User {
@@ -262,6 +281,23 @@ export class LocalRepo implements Repository {
 
   deleteProduct(id: string): void {
     this.products = this.products.filter(p => p.id !== id);
+    this.emit();
+  }
+
+  // ——— إعلانات إدارية ———
+  getAnnouncements(): Announcement[] {
+    return [...this.announcements].sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  addAnnouncement(input: NewAnnouncementInput): Announcement {
+    const a: Announcement = { ...input, id: nid('ann'), createdAt: Date.now() };
+    this.announcements.unshift(a);
+    this.emit();
+    return a;
+  }
+
+  deleteAnnouncement(id: string): void {
+    this.announcements = this.announcements.filter(a => a.id !== id);
     this.emit();
   }
 }
