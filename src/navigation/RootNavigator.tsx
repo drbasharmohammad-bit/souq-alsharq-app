@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import { AuthProvider } from '../context/AuthContext';
 import { FavoritesProvider } from '../context/FavoritesContext';
+import { GovProvider } from '../context/GovContext';
 import { RepoProvider } from '../repo/RepoContext';
 import { MedicalAdminScreen } from '../screens/admin/MedicalAdminScreen';
 import { AdminScreen } from '../screens/admin/AdminScreen';
@@ -15,6 +16,7 @@ import { ReviewScreen } from '../screens/admin/ReviewScreen';
 import { SubscriptionReviewScreen } from '../screens/admin/SubscriptionReviewScreen';
 import { UsersAdminScreen } from '../screens/admin/UsersAdminScreen';
 import { AnnouncementsScreen } from '../screens/AnnouncementsScreen';
+import { AdDetailScreen } from '../screens/AdDetailScreen';
 import { AccountTypeScreen } from '../screens/auth/AccountTypeScreen';
 import { CreateStoreScreen } from '../screens/auth/CreateStoreScreen';
 import { OtpScreen } from '../screens/auth/OtpScreen';
@@ -31,6 +33,7 @@ import { PublishSectionScreen } from '../screens/publish/PublishSectionScreen';
 import { PublishSubScreen } from '../screens/publish/PublishSubScreen';
 import { PublishSuccessScreen } from '../screens/publish/PublishSuccessScreen';
 import { SearchScreen } from '../screens/SearchScreen';
+import { StoreDetailScreen } from '../screens/StoreDetailScreen';
 import { SubCategoriesScreen } from '../screens/SubCategoriesScreen';
 import { SubscriptionScreen } from '../screens/SubscriptionScreen';
 import { colors } from '../theme';
@@ -42,6 +45,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export function RootNavigator() {
   return (
     <RepoProvider>
+      <GovProvider>
       <AuthProvider>
         <FavoritesProvider>
           <NavigationContainer ref={navigationRef}>
@@ -55,6 +59,8 @@ export function RootNavigator() {
               <Stack.Screen name="SubCategories" component={SubCategoriesScreen} options={{ title: 'التصنيفات' }} />
               <Stack.Screen name="Listings" component={ListingsScreen} options={({ route }) => ({ title: route.params.title })} />
               <Stack.Screen name="Detail" component={DetailScreen} options={{ title: 'التفاصيل' }} />
+              <Stack.Screen name="AdDetail" component={AdDetailScreen} options={{ headerShown: false }} />
+              <Stack.Screen name="StoreDetail" component={StoreDetailScreen} options={{ headerShown: false }} />
               <Stack.Screen name="Medical" component={MedicalScreen} options={{ title: 'القسم الطبي' }} />
               <Stack.Screen name="Search" component={SearchScreen} options={{ title: 'البحث' }} />
               {/* الحسابات */}
@@ -88,6 +94,7 @@ export function RootNavigator() {
           </NavigationContainer>
         </FavoritesProvider>
       </AuthProvider>
+      </GovProvider>
     </RepoProvider>
   );
 }

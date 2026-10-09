@@ -19,6 +19,7 @@ export function CreateStoreScreen({ navigation }: Props) {
   const [sec, setSec] = useState(SECTIONS[0].name);
   const [gov, setGov] = useState(GOVS[1]);
   const [phone, setPhone] = useState(user?.phone ?? '');
+  const [hours, setHours] = useState('');
   const [desc, setDesc] = useState('');
 
   const save = async () => {
@@ -35,6 +36,11 @@ export function CreateStoreScreen({ navigation }: Props) {
       icon: 'store',
       g1: colors.primary,
       g2: colors.primaryLight,
+      phone: phone.trim(),
+      hours: hours.trim() || undefined,
+      description: desc.trim() || undefined,
+      verified: false,
+      featured: false,
     });
     // ربط المتجر بالمستخدم
     repo.linkStoreToUser(user.phone, store.id);
@@ -54,6 +60,7 @@ export function CreateStoreScreen({ navigation }: Props) {
       <SelectChips label="القسم الرئيسي" options={SECTIONS.filter(s => s.key !== 'medical').map(s => s.name)} value={sec} onChange={setSec} />
       <SelectChips label="المحافظة" options={GOVS.filter(g => g !== 'الكل')} value={gov} onChange={setGov} />
       <FormField label="رقم الهاتف" value={phone} onChange={setPhone} placeholder="09xxxxxxxx" keyboardType="phone-pad" required />
+      <FormField label="أوقات الدوام" value={hours} onChange={setHours} placeholder="مثال: يوميًا 9 صباحًا - 11 مساءً" />
       <FormField label="وصف المتجر" value={desc} onChange={setDesc} placeholder="نبذة عن نشاطك..." multiline />
 
       <Pressable style={styles.btn} onPress={save}>

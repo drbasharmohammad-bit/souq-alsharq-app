@@ -59,11 +59,11 @@ export const SUBCATS: Record<string, SubCategory[]> = {
 export const SPECS = ['عام', 'باطنية', 'أطفال', 'نسائية وتوليد', 'عظمية', 'جلدية', 'عيون', 'أسنان'];
 
 export const STORES: Store[] = [
-  { id: 's1', name: 'مفروشات الشرق', sec: 'مولات ومتاجر', gov: 'الحسكة', area: 'الصالحية', icon: 'sofa', g1: '#7A4A1F', g2: '#D9A441' },
-  { id: 's2', name: 'مطعم بيت المشاوي', sec: 'مطاعم ومأكولات', gov: 'الحسكة', area: 'المفتي', icon: 'food-drumstick', g1: '#A33E2A', g2: '#E07B4F' },
-  { id: 's3', name: 'معرض النور للسيارات', sec: 'سيارات', gov: 'دير الزور', area: 'الجورة', icon: 'car', g1: '#3A3F4B', g2: '#7A8494' },
-  { id: 's4', name: 'ماركت البركة', sec: 'مولات ومتاجر', gov: 'الرقة', area: 'المشلب', icon: 'storefront', g1: '#0E6B4A', g2: '#2E9E6B' },
-  { id: 's5', name: 'حلويات الشرق', sec: 'مطاعم ومأكولات', gov: 'القامشلي', area: 'الوسطى', icon: 'candy', g1: '#8A4A7A', g2: '#D18AC9' },
+  { id: 's1', name: 'مفروشات الشرق', sec: 'مولات ومتاجر', gov: 'الحسكة', area: 'الصالحية', icon: 'sofa', g1: '#7A4A1F', g2: '#D9A441', phone: '0933111000', hours: 'يوميًا: 9 صباحًا - 9 مساءً', description: 'مفروشات وأثاث منزلي بجودة عالية وأسعار منافسة.', verified: true },
+  { id: 's2', name: 'مطعم بيت المشاوي', sec: 'مطاعم ومأكولات', gov: 'الحسكة', area: 'المفتي', icon: 'food-drumstick', g1: '#A33E2A', g2: '#E07B4F', phone: '0933222000', hours: 'يوميًا: 11 صباحًا - 12 منتصف الليل', description: 'مشاوي على الفحم بلحوم طازجة يوميًا، صالة عائلية.', verified: true, featured: true },
+  { id: 's3', name: 'معرض النور للسيارات', sec: 'سيارات', gov: 'دير الزور', area: 'الجورة', icon: 'car', g1: '#3A3F4B', g2: '#7A8494', phone: '0933333000', hours: 'السبت - الخميس: 9 صباحًا - 8 مساءً', description: 'بيع وشراء السيارات الجديدة والمستعملة مع كفالة.', verified: true },
+  { id: 's4', name: 'ماركت البركة', sec: 'مولات ومتاجر', gov: 'الرقة', area: 'المشلب', icon: 'storefront', g1: '#0E6B4A', g2: '#2E9E6B', phone: '0933444000', hours: 'يوميًا: 8 صباحًا - 11 مساءً', description: 'مواد غذائية وخضار طازجة يوميًا.', verified: false },
+  { id: 's5', name: 'حلويات الشرق', sec: 'مطاعم ومأكولات', gov: 'القامشلي', area: 'الوسطى', icon: 'candy', g1: '#8A4A7A', g2: '#D18AC9', phone: '0933555000', hours: 'يوميًا: 9 صباحًا - 10 مساءً', description: 'حلويات عربية وغربية طازجة، طلبات للمناسبات.', verified: true },
 ];
 
 export const LISTINGS: SeedListing[] = [

@@ -4,7 +4,8 @@ import { Alert, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, View }
 import { AppIcon } from '../../components/AppIcon';
 import { FormField } from '../../components/FormField';
 import { ImagePickerField } from '../../components/ImagePickerField';
-import { SECTIONS } from '../../data';
+import { SelectChips } from '../../components/SelectChips';
+import { GOVS, SECTIONS } from '../../data';
 import { useAuth } from '../../context/AuthContext';
 import { RootStackParamList } from '../../navigation/types';
 import { useRepo } from '../../repo/RepoContext';
@@ -14,7 +15,7 @@ import { formatDateTime } from '../../utils/format';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AdminBanners'>;
 
-type TargetChoice = 'none' | 'announcements' | string; // string = section key
+type TargetChoice = 'none' | 'announcements' | 'store' | string; // string = section key
 
 export function BannersAdminScreen({}: Props) {
   const { user } = useAuth();
@@ -23,8 +24,11 @@ export function BannersAdminScreen({}: Props) {
   const [subtitle, setSubtitle] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [target, setTarget] = useState<TargetChoice>('none');
+  const [storeId, setStoreId] = useState('');
+  const [gov, setGov] = useState('الكل');
 
   const banners = useMemo(() => repo.getBanners(), [repo]);
+  const stores = useMemo(() => repo.getStores(), [repo]);
 
   if (!user?.isAdmin) {
     return (
@@ -46,18 +50,31 @@ export function BannersAdminScreen({}: Props) {
       Alert.alert('تنبيه', 'اختر صورة للبانر');
       return;
     }
+    if (target === 'store' && !storeId) {
+      Alert.alert('تنبيه', 'اختر المتجر الوجهة');
+      return;
+    }
     const input = {
       title: title.trim(),
       subtitle: subtitle.trim() || undefined,
       imageUri: images[0],
-      targetType: (target === 'none' ? null : target === 'announcements' ? 'announcement' : 'section') as BannerTargetType,
-      targetId: target === 'none' ? undefined : target,
+      targetType: (target === 'none'
+        ? null
+        : target === 'announcements'
+          ? 'announcement'
+          : target === 'store'
+            ? 'store'
+            : 'section') as BannerTargetType,
+      targetId: target === 'none' ? undefined : target === 'store' ? storeId : target,
+      governorate: gov === 'الكل' ? 'all' : gov,
     };
     repo.addBanner(input);
     setTitle('');
     setSubtitle('');
     setImages([]);
     setTarget('none');
+    setStoreId('');
+    setGov('الكل');
     Alert.alert('تم', 'أُضيف البانر وسيظهر في الواجهة الرئيسية');
   };
 
@@ -71,9 +88,16 @@ export function BannersAdminScreen({}: Props) {
   const targetName = (b: { targetType?: BannerTargetType | null; targetId?: string }) => {
     if (!b.targetType) return 'بلا وجهة';
     if (b.targetType === 'announcement') return 'إعلانات الإدارة';
+    if (b.targetType === 'store') {
+      const s = stores.find(x => x.id === b.targetId);
+      return s ? `متجر ${s.name}` : 'متجر محذوف';
+    }
     const s = SECTIONS.find(x => x.key === b.targetId);
     return s ? `قسم ${s.name}` : 'قسم';
   };
+
+  const govName = (b: { governorate?: string }) =>
+    !b.governorate || b.governorate === 'all' ? 'كل المحافظات' : b.governorate;
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.wrap}>
@@ -95,6 +119,11 @@ export function BannersAdminScreen({}: Props) {
             onPress={() => setTarget('announcements')}>
             <Text style={[styles.chipText, target === 'announcements' && styles.chipTextActive]}>إعلانات الإدارة</Text>
           </Pressable>
+          <Pressable
+            style={[styles.chip, target === 'store' && styles.chipActive]}
+            onPress={() => setTarget('store')}>
+            <Text style={[styles.chipText, target === 'store' && styles.chipTextActive]}>متجر</Text>
+          </Pressable>
           {SECTIONS.map(s => (
             <Pressable
               key={s.key}
@@ -104,6 +133,29 @@ export function BannersAdminScreen({}: Props) {
             </Pressable>
           ))}
         </View>
+
+        {target === 'store' && (
+          <>
+            <Text style={styles.label}>اختر المتجر</Text>
+            <View style={styles.chips}>
+              {stores.map(s => (
+                <Pressable
+                  key={s.id}
+                  style={[styles.chip, storeId === s.id && styles.chipActive]}
+                  onPress={() => setStoreId(s.id)}>
+                  <Text style={[styles.chipText, storeId === s.id && styles.chipTextActive]}>{s.name}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        )}
+
+        <SelectChips
+          label="المحافظة المستهدفة"
+          options={GOVS}
+          value={gov}
+          onChange={setGov}
+        />
 
         <Pressable style={styles.btn} onPress={save}>
           <View style={styles.btnRow}>
@@ -126,7 +178,7 @@ export function BannersAdminScreen({}: Props) {
               <Text style={styles.cardTitle}>{item.title}</Text>
               {!!item.subtitle && <Text style={styles.cardSub}>{item.subtitle}</Text>}
               <Text style={styles.cardMeta}>
-                {targetName(item)} • {formatDateTime(item.createdAt)}
+                {targetName(item)} • {govName(item)} • {formatDateTime(item.createdAt)}
               </Text>
               <View style={styles.cardActions}>
                 <Pressable style={[styles.mini, item.active ? styles.miniOff : styles.miniOn]} onPress={() => repo.toggleBanner(item.id)}>

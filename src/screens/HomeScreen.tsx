@@ -8,11 +8,13 @@ import { AppIcon } from '../components/AppIcon';
 import { GovChips } from '../components/GovChips';
 import { ListingCard } from '../components/ListingCard';
 import { PlaceholderImage } from '../components/PlaceholderImage';
+import { useGov } from '../context/GovContext';
 import { GOVS, SECTIONS } from '../data';
 import { RootStackParamList, TabsParamList } from '../navigation/types';
 import { useAnnouncements } from '../repo/announcements';
 import { useRepo } from '../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../theme';
+import { showToast } from '../utils/toast';
 import { Banner as BannerT } from '../types';
 
 type Props = CompositeScreenProps<
@@ -34,7 +36,7 @@ type CarouselItem =
   | { kind: 'default'; id: string; title: string; sub: string; c: string; icon: string };
 
 export function HomeScreen({ navigation }: Props) {
-  const [gov, setGov] = useState('الكل');
+  const { gov, setGov } = useGov();
   const [dismissedId, setDismissedId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const repo = useRepo();
@@ -48,6 +50,21 @@ export function HomeScreen({ navigation }: Props) {
   const latestAnn = (remoteAnns.length > 0 ? remoteAnns : repo.getAnnouncements())[0];
   const showAnn = latestAnn && latestAnn.id !== dismissedId;
 
+  const featured = useMemo(
+    () => repo.getListings({ gov, status: 'approved' }).slice(0, 6),
+    [repo, gov],
+  );
+  const stores = useMemo(() => repo.getStores(gov === 'الكل' ? undefined : gov), [repo, gov]);
+
+  // البانرات الظاهرة لمحافظة المستخدم (أو 'all' للجميع)
+  const visibleBanners = useMemo(
+    () =>
+      repo
+        .getActiveBanners()
+        .filter(b => !b.governorate || b.governorate === 'all' || gov === 'الكل' || b.governorate === gov),
+    [repo, gov],
+  );
+
   // عناصر الكاروسيل: مميزة مدفوعة أولًا، ثم بانرات الإدارة، ثم الافتراضية
   const now = Date.now();
   const carousel: CarouselItem[] = [];
@@ -57,9 +74,7 @@ export function HomeScreen({ navigation }: Props) {
     .forEach(f =>
       carousel.push({ kind: 'featured', id: f.id, imageUri: f.imageUri, storeId: f.storeId }),
     );
-  repo
-    .getActiveBanners()
-    .forEach(b => carousel.push({ kind: 'banner', data: b }));
+  visibleBanners.forEach(b => carousel.push({ kind: 'banner', data: b }));
   if (carousel.length === 0) {
     BANNERS.forEach(b => carousel.push({ kind: 'default', ...b }));
   }
@@ -75,23 +90,31 @@ export function HomeScreen({ navigation }: Props) {
     }
   };
 
-  const featured = useMemo(
-    () => repo.getListings({ gov, status: 'approved' }).slice(0, 6),
-    [repo, gov],
-  );
-  const stores = useMemo(() => repo.getStores(), [repo]);
-
   const goSection = (key: string) => {
     if (key === 'medical') navigation.navigate('Medical');
     else navigation.navigate('SubCategories', { sectionKey: key });
   };
 
   const goBannerTarget = (b: BannerT) => {
+    if (!b.targetType) return;
     if (b.targetType === 'section' && b.targetId) {
-      goSection(b.targetId);
+      if (b.targetId === 'medical') navigation.navigate('Medical');
+      else if (SECTIONS.some(s => s.key === b.targetId)) {
+        navigation.navigate('SubCategories', { sectionKey: b.targetId });
+      } else showToast('الوجهة غير متوفرة');
+    } else if (b.targetType === 'store' && b.targetId) {
+      if (repo.getStoreById(b.targetId)) {
+        navigation.navigate('StoreDetail', { storeId: b.targetId });
+      } else showToast('المتجر غير متوفر');
     } else if (b.targetType === 'announcement') {
       navigation.navigate('Announcements');
     }
+  };
+
+  const goStore = (storeId: string) => {
+    if (repo.getStoreById(storeId)) {
+      navigation.navigate('StoreDetail', { storeId });
+    } else showToast('المتجر غير متوفر');
   };
 
   const itemKey = (item: CarouselItem) =>
@@ -109,7 +132,6 @@ export function HomeScreen({ navigation }: Props) {
     const imageUri = item.kind === 'featured' ? item.imageUri : item.data.imageUri;
     const title = item.kind === 'featured' ? repo.getStoreById(item.storeId)?.name : item.data.title;
     const sub = item.kind === 'featured' ? 'إعلان مميز' : item.data.subtitle;
-    const tappable = item.kind === 'banner' && !!item.data.targetType;
     const inner = (
       <View style={styles.bannerImgWrap}>
         <Image source={{ uri: imageUri }} style={styles.bannerImg} resizeMode="cover" />
@@ -127,11 +149,15 @@ export function HomeScreen({ navigation }: Props) {
         </View>
       </View>
     );
-    return tappable ? (
-      <Pressable onPress={() => goBannerTarget((item as { data: BannerT }).data)}>{inner}</Pressable>
-    ) : (
-      inner
-    );
+    if (item.kind === 'featured') {
+      return <Pressable onPress={() => goStore(item.storeId)}>{inner}</Pressable>;
+    }
+    if (item.kind === 'banner' && item.data.targetType) {
+      return (
+        <Pressable onPress={() => goBannerTarget((item as { data: BannerT }).data)}>{inner}</Pressable>
+      );
+    }
+    return inner;
   };
 
   return (
@@ -221,14 +247,16 @@ export function HomeScreen({ navigation }: Props) {
         initialNumToRender={5}
         maxToRenderPerBatch={5}
         renderItem={({ item }) => (
-          <View style={styles.storeCard}>
-            <PlaceholderImage icon={item.icon} color={item.g1} size={56} />
-            <Text style={styles.storeName} numberOfLines={1}>{item.name}</Text>
-            <View style={styles.storeMetaRow}>
-              <AppIcon name="map-marker" size={12} color={colors.textMuted} />
-              <Text style={styles.storeMeta} numberOfLines={1}>{item.gov}</Text>
+          <Pressable onPress={() => goStore(item.id)}>
+            <View style={styles.storeCard}>
+              <PlaceholderImage icon={item.icon} color={item.g1} size={56} />
+              <Text style={styles.storeName} numberOfLines={1}>{item.name}</Text>
+              <View style={styles.storeMetaRow}>
+                <AppIcon name="map-marker" size={12} color={colors.textMuted} />
+                <Text style={styles.storeMeta} numberOfLines={1}>{item.gov}</Text>
+              </View>
             </View>
-          </View>
+          </Pressable>
         )}
       />
 
@@ -245,7 +273,7 @@ export function HomeScreen({ navigation }: Props) {
         maxToRenderPerBatch={6}
         windowSize={7}
         renderItem={({ item }) => (
-          <ListingCard item={item} onPress={() => navigation.navigate('Detail', { listingId: item.id })} />
+          <ListingCard item={item} onPress={() => navigation.navigate('AdDetail', { listingId: item.id })} />
         )}
       />
       <View style={{ height: spacing.xl }} />

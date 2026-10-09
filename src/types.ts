@@ -65,6 +65,7 @@ export interface Product {
   price: number | null;
   description: string;
   images: string[];
+  governorate?: string;
   createdAt: number;
 }
 
@@ -104,6 +105,7 @@ export interface Banner {
   imageUri: string;
   targetType?: BannerTargetType;
   targetId?: string;
+  governorate?: string; // 'all' أو اسم محافظة — الافتراضي 'all'
   active: boolean;
   createdAt: number;
 }
@@ -136,6 +138,20 @@ export interface Store {
   icon: string;
   g1: string;
   g2: string;
+  phone?: string;
+  hours?: string;
+  description?: string;
+  verified?: boolean;
+  featured?: boolean;
+}
+
+export interface Review {
+  id: string;
+  storeId: string;
+  userName: string;
+  rating: number;
+  text: string;
+  createdAt: number;
 }
 
 export interface Doctor {

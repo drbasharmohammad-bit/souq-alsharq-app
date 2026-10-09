@@ -11,6 +11,7 @@ import {
   Listing,
   Pharmacy,
   Product,
+  Review,
   SectionKey,
   Store,
   Subscription,
@@ -29,6 +30,7 @@ export type NewFeaturedRequestInput = Omit<
   FeaturedRequest,
   'id' | 'status' | 'startDate' | 'endDate' | 'createdAt'
 >;
+export type NewReviewInput = Omit<Review, 'id' | 'createdAt'>;
 
 export type DoctorEntry = Doctor & { id: string };
 export type PharmacyEntry = Pharmacy & { id: string };
@@ -53,9 +55,13 @@ export interface Repository {
   getUserListings(userId: string): Listing[];
 
   // متاجر
-  getStores(): Store[];
+  getStores(gov?: string): Store[];
   getStoreById(id: string): Store | undefined;
   addStore(input: NewStoreInput): Store;
+
+  // تقييمات المتاجر
+  getReviews(storeId: string): Review[];
+  addReview(input: NewReviewInput): Review;
 
   // مستخدمون
   getUserByPhone(phone: string): User | undefined;
@@ -87,6 +93,7 @@ export interface Repository {
 
   // منتجات المتاجر
   getProductsByStore(storeId: string): Product[];
+  getProductById(id: string): Product | undefined;
   addProduct(input: NewProductInput): Product;
   deleteProduct(id: string): void;
 

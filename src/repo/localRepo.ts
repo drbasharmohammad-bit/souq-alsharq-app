@@ -18,6 +18,7 @@ import {
   Listing,
   Pharmacy,
   Product,
+  Review,
   Store,
   Subscription,
   User,
@@ -31,6 +32,7 @@ import {
   NewFeaturedRequestInput,
   NewListingInput,
   NewProductInput,
+  NewReviewInput,
   NewStoreInput,
   NewSubscriptionInput,
   NewUserInput,
@@ -55,6 +57,7 @@ export class LocalRepo implements Repository {
   private announcements: Announcement[] = [];
   private banners: Banner[] = [];
   private featured: FeaturedRequest[] = [];
+  private reviews: Review[] = [];
   private featuredSettings: FeaturedSettings = { price: 0, durationDays: 7 };
 
   private listeners = new Set<() => void>();
@@ -79,6 +82,11 @@ export class LocalRepo implements Repository {
     this.doctors = DOCTORS.map((d, i) => ({ ...d, id: `doc${i}` }));
     this.pharmacies = PHARMS.map((p, i) => ({ ...p, id: `ph${i}` }));
     this.labs = LABS.map((l, i) => ({ ...l, id: `lab${i}` }));
+    // تقييمات تجريبية لأحد المتاجر
+    this.reviews = [
+      { id: 'rev1', storeId: 's2', userName: 'أبو محمد', rating: 5, text: 'أطيب مشاوي بالحسكة، والخدمة سريعة. أنصح فيه بقوة.', createdAt: now - 86400000 * 2 },
+      { id: 'rev2', storeId: 's2', userName: 'لينا خالد', rating: 4, text: 'الأكل طيب والأسعار مناسبة، بس الازدحام بالمسا كبير.', createdAt: now - 86400000 * 5 },
+    ];
   }
 
   // ——— إعلانات ———
@@ -129,8 +137,8 @@ export class LocalRepo implements Repository {
   }
 
   // ——— متاجر ———
-  getStores(): Store[] {
-    return [...this.stores];
+  getStores(gov?: string): Store[] {
+    return this.stores.filter(s => !gov || gov === 'الكل' || s.gov === gov);
   }
 
   getStoreById(id: string): Store | undefined {
@@ -142,6 +150,20 @@ export class LocalRepo implements Repository {
     this.stores.unshift(store);
     this.emit();
     return store;
+  }
+
+  // ——— تقييمات المتاجر ———
+  getReviews(storeId: string): Review[] {
+    return this.reviews
+      .filter(r => r.storeId === storeId)
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  addReview(input: NewReviewInput): Review {
+    const r: Review = { ...input, id: nid('rev'), createdAt: Date.now() };
+    this.reviews.unshift(r);
+    this.emit();
+    return r;
   }
 
   // ——— مستخدمون ———
@@ -275,6 +297,10 @@ export class LocalRepo implements Repository {
     return this.products
       .filter(p => p.storeId === storeId)
       .sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  getProductById(id: string): Product | undefined {
+    return this.products.find(p => p.id === id);
   }
 
   addProduct(input: NewProductInput): Product {

@@ -1,11 +1,12 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { FabButton } from '../components/FabButton';
 import { AppIcon } from '../components/AppIcon';
 import { GovChips } from '../components/GovChips';
 import { ListingCard } from '../components/ListingCard';
 import { useAuth } from '../context/AuthContext';
+import { useGov } from '../context/GovContext';
 import { GOVS } from '../data';
 import { RootStackParamList } from '../navigation/types';
 import { useRepo } from '../repo/RepoContext';
@@ -16,7 +17,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Listings'>;
 
 export function ListingsScreen({ navigation, route }: Props) {
   const { sectionKey, subKey } = route.params;
-  const [gov, setGov] = useState('الكل');
+  const { gov, setGov } = useGov();
   const repo = useRepo();
   const { user } = useAuth();
 
@@ -47,7 +48,7 @@ export function ListingsScreen({ navigation, route }: Props) {
         windowSize={9}
         removeClippedSubviews
         renderItem={({ item }) => (
-          <ListingCard item={item} onPress={() => navigation.navigate('Detail', { listingId: item.id })} />
+          <ListingCard item={item} onPress={() => navigation.navigate('AdDetail', { listingId: item.id })} />
         )}
         ListEmptyComponent={
           <View style={styles.emptyWrap}>

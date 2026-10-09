@@ -2,31 +2,34 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ListingCard } from '../components/ListingCard';
+import { useGov } from '../context/GovContext';
 import { RootStackParamList } from '../navigation/types';
 import { useRepo } from '../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Search'>;
 
-export function SearchScreen({ navigation }: Props) {
-  const [q, setQ] = useState('');
+export function SearchScreen({ navigation, route }: Props) {
+  const [q, setQ] = useState(route.params?.q ?? '');
   const repo = useRepo();
+  const { gov } = useGov();
 
   const results = useMemo(() => {
     const t = q.trim();
     if (t.length < 2) return [];
-    return repo.getListings({ status: 'approved', query: t });
-  }, [q, repo]);
+    return repo.getListings({ status: 'approved', query: t, gov });
+  }, [q, repo, gov]);
 
   const medResults = useMemo(() => {
     const t = q.trim();
     if (t.length < 2) return [];
+    const inGov = (g: string) => gov === 'الكل' || g === gov;
     return [
-      ...repo.getDoctors().filter(d => d.name.includes(t) || d.spec.includes(t)).map(d => ({ k: 'طبيب', n: d.name, m: `${d.spec} • ${d.gov}` })),
-      ...repo.getPharmacies().filter(p => p.name.includes(t)).map(p => ({ k: 'صيدلية', n: p.name, m: p.gov })),
-      ...repo.getLabs().filter(l => l.name.includes(t)).map(l => ({ k: 'مخبر', n: l.name, m: l.gov })),
+      ...repo.getDoctors().filter(d => inGov(d.gov) && (d.name.includes(t) || d.spec.includes(t))).map(d => ({ k: 'طبيب', n: d.name, m: `${d.spec} • ${d.gov}` })),
+      ...repo.getPharmacies().filter(p => inGov(p.gov) && p.name.includes(t)).map(p => ({ k: 'صيدلية', n: p.name, m: p.gov })),
+      ...repo.getLabs().filter(l => inGov(l.gov) && l.name.includes(t)).map(l => ({ k: 'مخبر', n: l.name, m: l.gov })),
     ];
-  }, [q, repo]);
+  }, [q, repo, gov]);
 
   return (
     <View style={styles.root}>
@@ -62,7 +65,7 @@ export function SearchScreen({ navigation }: Props) {
             ) : undefined
           }
           renderItem={({ item }) => (
-            <ListingCard item={item} onPress={() => navigation.navigate('Detail', { listingId: item.id })} />
+            <ListingCard item={item} onPress={() => navigation.navigate('AdDetail', { listingId: item.id })} />
           )}
           ListEmptyComponent={<Text style={styles.empty}>لا نتائج مطابقة</Text>}
         />

@@ -39,6 +39,7 @@ export function AddProductScreen({ navigation }: Props) {
       price: Number.isFinite(priceNum) ? priceNum : null,
       description: desc.trim(),
       images,
+      governorate: store.gov,
     });
     Alert.alert('تم', 'أُضيف الصنف إلى متجرك', [
       { text: 'حسنًا', onPress: () => navigation.goBack() },

@@ -35,7 +35,7 @@ export function MyAdsScreen({ navigation }: Props) {
               <ListingCard
                 item={item}
                 onPress={() =>
-                  item.status === 'approved' && navigation.navigate('Detail', { listingId: item.id })
+                  item.status === 'approved' && navigation.navigate('AdDetail', { listingId: item.id })
                 }
               />
               <View style={[styles.badge, { backgroundColor: m.bg, marginTop: -6 }]}>

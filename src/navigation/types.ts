@@ -12,8 +12,10 @@ export type RootStackParamList = {
   SubCategories: { sectionKey: string };
   Listings: { sectionKey: string; subKey?: string; title: string };
   Detail: { listingId: string };
+  StoreDetail: { storeId: string };
+  AdDetail: { listingId?: string; productId?: string };
   Medical: undefined;
-  Search: undefined;
+  Search: { q?: string } | undefined;
   // المرحلة 2: الحسابات
   Phone: undefined;
   Otp: { phone: string };

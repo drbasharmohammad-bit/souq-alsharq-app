@@ -32,7 +32,7 @@ export function FavoritesScreen({ navigation }: Props) {
         initialNumToRender={8}
         maxToRenderPerBatch={8}
         renderItem={({ item }) => (
-          <ListingCard item={item} onPress={() => navigation.navigate('Detail', { listingId: item.id })} />
+          <ListingCard item={item} onPress={() => navigation.navigate('AdDetail', { listingId: item.id })} />
         )}
         ListEmptyComponent={
           <View style={styles.emptyWrap}>

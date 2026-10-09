@@ -1,0 +1,349 @@
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import React, { useMemo, useState } from 'react';
+import {
+  Alert,
+  Image,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { AppIcon } from '../components/AppIcon';
+import { useAuth } from '../context/AuthContext';
+import { formatDate } from '../utils/format';
+import { RootStackParamList } from '../navigation/types';
+import { useRepo } from '../repo/RepoContext';
+import { colors, fontSize, radius, spacing } from '../theme';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'StoreDetail'>;
+
+const cleanPhone = (p: string) => p.replace(/[^\d]/g, '');
+const waLink = (p: string) => {
+  let d = cleanPhone(p);
+  if (d.startsWith('0')) d = '963' + d.slice(1);
+  return `https://wa.me/${d}`;
+};
+
+function Stars({ value, size = 15 }: { value: number; size?: number }) {
+  const full = Math.round(value);
+  return (
+    <View style={{ flexDirection: 'row', gap: 2 }}>
+      {[1, 2, 3, 4, 5].map(i => (
+        <AppIcon
+          key={i}
+          name={i <= full ? 'star' : 'star-outline'}
+          size={size}
+          color={colors.gold}
+        />
+      ))}
+    </View>
+  );
+}
+
+type Tab = 'products' | 'reviews' | 'about';
+
+export function StoreDetailScreen({ navigation, route }: Props) {
+  const repo = useRepo();
+  const { user } = useAuth();
+  const store = repo.getStoreById(route.params.storeId);
+  const [tab, setTab] = useState<Tab>('products');
+  const [revName, setRevName] = useState(user?.phone ?? '');
+  const [revRating, setRevRating] = useState(5);
+  const [revText, setRevText] = useState('');
+
+  const reviews = useMemo(
+    () => (store ? repo.getReviews(store.id) : []),
+    [repo, store],
+  );
+  const products = useMemo(
+    () => (store ? repo.getProductsByStore(store.id) : []),
+    [repo, store],
+  );
+  const avg = reviews.length
+    ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+    : 0;
+
+  if (!store) {
+    return (
+      <View style={styles.center}>
+        <AppIcon name="store-off" size={52} color={colors.textMuted} />
+        <Text style={styles.empty}>المتجر غير موجود</Text>
+      </View>
+    );
+  }
+
+  const call = () => {
+    if (store.phone) Linking.openURL(`tel:${cleanPhone(store.phone)}`);
+    else Alert.alert('تنبيه', 'لا يوجد رقم هاتف لهذا المتجر');
+  };
+  const whatsapp = () => {
+    if (store.phone) Linking.openURL(waLink(store.phone));
+    else Alert.alert('تنبيه', 'لا يوجد رقم واتساب لهذا المتجر');
+  };
+
+  const submitReview = () => {
+    if (!revText.trim()) {
+      Alert.alert('تنبيه', 'اكتب نص التقييم أولًا');
+      return;
+    }
+    repo.addReview({
+      storeId: store.id,
+      userName: revName.trim() || 'زائر',
+      rating: revRating,
+      text: revText.trim(),
+    });
+    setRevText('');
+    Alert.alert('شكرًا', 'تم نشر تقييمك');
+  };
+
+  return (
+    <ScrollView style={styles.root} showsVerticalScrollIndicator={false}>
+      {/* الغلاف */}
+      <View style={[styles.cover, { backgroundColor: store.g1 }]}>
+        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={8}>
+          <AppIcon name="arrow-right" size={20} color={colors.primary} />
+        </Pressable>
+        <Text style={styles.coverName}>{store.name}</Text>
+      </View>
+
+      <View style={styles.head}>
+        <View style={[styles.logo, { backgroundColor: colors.gold }]}>
+          <Text style={styles.logoText}>{store.name.charAt(0)}</Text>
+        </View>
+        <View style={styles.nameRow}>
+          <Text style={styles.name}>{store.name}</Text>
+        </View>
+        <View style={styles.badgesRow}>
+          {store.verified && (
+            <View style={styles.vbadge}>
+              <AppIcon name="check-circle" size={13} color={colors.white} />
+              <Text style={styles.badgeText}>موثق</Text>
+            </View>
+          )}
+          {store.featured && (
+            <View style={styles.fbadge}>
+              <AppIcon name="star" size={13} color={colors.white} />
+              <Text style={styles.badgeText}>مميز</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.ratingRow}>
+          <Stars value={avg} />
+          <Text style={styles.ratingText}>
+            {reviews.length > 0 ? `${avg.toFixed(1)} (${reviews.length} تقييم)` : 'لا تقييمات بعد'}
+          </Text>
+        </View>
+      </View>
+
+      {/* معلومات */}
+      <View style={styles.infoRows}>
+        <View style={styles.irow}>
+          <View style={styles.iicon}><AppIcon name="map-marker" size={17} color={colors.primary} /></View>
+          <Text style={styles.itext}>{store.area} — {store.gov}</Text>
+        </View>
+        {!!store.hours && (
+          <View style={styles.irow}>
+            <View style={styles.iicon}><AppIcon name="clock-outline" size={17} color={colors.primary} /></View>
+            <Text style={styles.itext}>{store.hours}</Text>
+          </View>
+        )}
+        {!!store.phone && (
+          <View style={styles.irow}>
+            <View style={styles.iicon}><AppIcon name="phone" size={17} color={colors.primary} /></View>
+            <Text style={styles.itext}>{store.phone}</Text>
+          </View>
+        )}
+      </View>
+
+      {/* اتصال / واتساب */}
+      <View style={styles.ctaRow}>
+        <Pressable style={[styles.cta, styles.ctaCall]} onPress={call}>
+          <AppIcon name="phone" size={18} color={colors.white} />
+          <Text style={styles.ctaText}>اتصال</Text>
+        </Pressable>
+        <Pressable style={[styles.cta, styles.ctaWa]} onPress={whatsapp}>
+          <AppIcon name="whatsapp" size={18} color={colors.white} />
+          <Text style={styles.ctaText}>واتساب</Text>
+        </Pressable>
+      </View>
+
+      {/* التبويبات */}
+      <View style={styles.tabs}>
+        {(
+          [
+            ['products', 'المنتجات'],
+            ['reviews', 'التقييمات'],
+            ['about', 'عن المتجر'],
+          ] as [Tab, string][]
+        ).map(([k, label]) => (
+          <Pressable key={k} style={[styles.tab, tab === k && styles.tabActive]} onPress={() => setTab(k)}>
+            <Text style={[styles.tabText, tab === k && styles.tabTextActive]}>{label}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {tab === 'products' && (
+        <View style={styles.pane}>
+          {products.length === 0 ? (
+            <Text style={styles.empty}>لا توجد منتجات بعد</Text>
+          ) : (
+            <View style={styles.pgrid}>
+              {products.map(p => (
+                <Pressable
+                  key={p.id}
+                  style={styles.pcard}
+                  onPress={() => navigation.navigate('AdDetail', { productId: p.id })}>
+                  {p.images.length > 0 ? (
+                    <Image source={{ uri: p.images[0] }} style={styles.pimg} resizeMode="cover" />
+                  ) : (
+                    <View style={[styles.pimg, styles.pimgPh]}>
+                      <AppIcon name="image" size={34} color={colors.textMuted} />
+                    </View>
+                  )}
+                  <View style={styles.pbody}>
+                    <Text style={styles.pname} numberOfLines={2}>{p.name}</Text>
+                    <Text style={styles.pprice}>
+                      {p.price != null ? `${p.price.toLocaleString('ar-SY')} ل.س` : 'حسب الاتفاق'}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          )}
+        </View>
+      )}
+
+      {tab === 'reviews' && (
+        <View style={styles.pane}>
+          {reviews.map(r => (
+            <View key={r.id} style={styles.rev}>
+              <View style={styles.revHead}>
+                <Text style={styles.revName}>{r.userName}</Text>
+                <Stars value={r.rating} size={13} />
+              </View>
+              <Text style={styles.revText}>{r.text}</Text>
+              <Text style={styles.revDate}>{formatDate(r.createdAt)}</Text>
+            </View>
+          ))}
+          {reviews.length === 0 && <Text style={styles.empty}>كن أول من يقيّم هذا المتجر</Text>}
+
+          <View style={styles.revForm}>
+            <Text style={styles.revFormTitle}>أضف تقييمك</Text>
+            <View style={styles.starPick}>
+              {[1, 2, 3, 4, 5].map(i => (
+                <Pressable key={i} onPress={() => setRevRating(i)} hitSlop={6}>
+                  <AppIcon
+                    name={i <= revRating ? 'star' : 'star-outline'}
+                    size={30}
+                    color={colors.gold}
+                  />
+                </Pressable>
+              ))}
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="الاسم (اختياري)"
+              placeholderTextColor={colors.textMuted}
+              value={revName}
+              onChangeText={setRevName}
+            />
+            <TextInput
+              style={[styles.input, styles.inputMulti]}
+              placeholder="اكتب رأيك بالمتجر..."
+              placeholderTextColor={colors.textMuted}
+              value={revText}
+              onChangeText={setRevText}
+              multiline
+            />
+            <Pressable style={styles.submitBtn} onPress={submitReview}>
+              <Text style={styles.submitText}>نشر التقييم</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {tab === 'about' && (
+        <View style={styles.pane}>
+          <Text style={styles.aboutText}>
+            {store.description || 'لا يوجد وصف لهذا المتجر بعد.'}
+          </Text>
+          <View style={styles.aboutMeta}>
+            <Text style={styles.aboutMetaText}>القسم: {store.sec}</Text>
+            <Text style={styles.aboutMetaText}>المحافظة: {store.gov}</Text>
+          </View>
+        </View>
+      )}
+      <View style={{ height: spacing.xl }} />
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.background },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: colors.background },
+  empty: { textAlign: 'center', color: colors.textMuted, fontSize: fontSize.md, marginTop: 8 },
+  cover: { height: 170, alignItems: 'center', justifyContent: 'center' },
+  backBtn: {
+    position: 'absolute', top: 50, right: 14, width: 36, height: 36, borderRadius: 18,
+    backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', elevation: 2,
+  },
+  coverName: { color: colors.white, fontSize: 26, fontWeight: '800', textShadowColor: 'rgba(0,0,0,0.3)', textShadowRadius: 8 },
+  head: { paddingHorizontal: spacing.lg, marginTop: -34 },
+  logo: {
+    width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 4, borderColor: colors.white, elevation: 3,
+  },
+  logoText: { color: colors.white, fontSize: 30, fontWeight: '800' },
+  nameRow: { marginTop: 8 },
+  name: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text },
+  badgesRow: { flexDirection: 'row', gap: 6, marginTop: 6 },
+  vbadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.primary, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
+  fbadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.gold, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
+  badgeText: { color: colors.white, fontSize: fontSize.xs, fontWeight: '700' },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  ratingText: { fontSize: fontSize.sm, color: colors.textMuted },
+  infoRows: { paddingHorizontal: spacing.lg, marginTop: spacing.md },
+  irow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border },
+  iicon: { width: 32, height: 32, borderRadius: 10, backgroundColor: colors.primary + '14', alignItems: 'center', justifyContent: 'center' },
+  itext: { fontSize: fontSize.sm, color: colors.text, flex: 1 },
+  ctaRow: { flexDirection: 'row', gap: 10, paddingHorizontal: spacing.lg, marginTop: spacing.md },
+  cta: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: radius.md, padding: spacing.md },
+  ctaCall: { backgroundColor: colors.primary },
+  ctaWa: { backgroundColor: '#1FA855' },
+  ctaText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
+  tabs: { flexDirection: 'row', paddingHorizontal: spacing.lg, marginTop: spacing.md },
+  tab: { flex: 1, alignItems: 'center', paddingVertical: 10, borderBottomWidth: 2.5, borderBottomColor: colors.border },
+  tabActive: { borderBottomColor: colors.primary },
+  tabText: { fontSize: fontSize.sm, fontWeight: '700', color: colors.textMuted },
+  tabTextActive: { color: colors.primary },
+  pane: { padding: spacing.lg },
+  pgrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  pcard: { width: '48%', backgroundColor: colors.card, borderRadius: radius.md, overflow: 'hidden', elevation: 1 },
+  pimg: { width: '100%', height: 110 },
+  pimgPh: { backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  pbody: { padding: 10 },
+  pname: { fontSize: fontSize.sm, fontWeight: '700', color: colors.text, minHeight: 38 },
+  pprice: { fontSize: fontSize.sm, fontWeight: '800', color: colors.primary, marginTop: 4 },
+  rev: { backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, elevation: 1 },
+  revHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  revName: { fontSize: fontSize.sm, fontWeight: '800', color: colors.text },
+  revText: { fontSize: fontSize.sm, color: colors.text, lineHeight: 22 },
+  revDate: { fontSize: fontSize.xs, color: colors.textMuted, marginTop: 4 },
+  revForm: { backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.md, elevation: 1 },
+  revFormTitle: { fontSize: fontSize.md, fontWeight: '800', color: colors.text, marginBottom: 8 },
+  starPick: { flexDirection: 'row', gap: 6, justifyContent: 'center', marginBottom: 10 },
+  input: {
+    backgroundColor: colors.background, borderRadius: radius.sm, padding: spacing.sm,
+    fontSize: fontSize.sm, color: colors.text, textAlign: 'right', marginBottom: 8,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  inputMulti: { minHeight: 80, textAlignVertical: 'top' },
+  submitBtn: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, alignItems: 'center' },
+  submitText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
+  aboutText: { fontSize: fontSize.md, color: colors.text, lineHeight: 26 },
+  aboutMeta: { marginTop: spacing.md, gap: 4 },
+  aboutMetaText: { fontSize: fontSize.sm, color: colors.textMuted },
+});
