@@ -1,10 +1,11 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { AppIcon } from '../components/AppIcon';
 import { ListingCard } from '../components/ListingCard';
 import { useGov } from '../context/GovContext';
 import { RootStackParamList } from '../navigation/types';
-import { useRepo } from '../repo/RepoContext';
+import { useRepo, useRepoRefresh } from '../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Search'>;
@@ -13,6 +14,16 @@ export function SearchScreen({ navigation, route }: Props) {
   const [q, setQ] = useState(route.params?.q ?? '');
   const repo = useRepo();
   const { gov } = useGov();
+  const refreshRepo = useRepoRefresh();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshRepo();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const results = useMemo(() => {
     const t = q.trim();
@@ -50,6 +61,7 @@ export function SearchScreen({ navigation, route }: Props) {
           contentContainerStyle={styles.list}
           initialNumToRender={8}
           maxToRenderPerBatch={8}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListHeaderComponent={
             medResults.length > 0 ? (
               <View>
@@ -67,7 +79,13 @@ export function SearchScreen({ navigation, route }: Props) {
           renderItem={({ item }) => (
             <ListingCard item={item} onPress={() => navigation.navigate('AdDetail', { listingId: item.id })} />
           )}
-          ListEmptyComponent={<Text style={styles.empty}>لا نتائج مطابقة</Text>}
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <AppIcon name="magnify" size={52} color={colors.textMuted} />
+              <Text style={styles.empty}>لا نتائج مطابقة لبحثك</Text>
+              <Text style={styles.emptySub}>جرّب كلمات مختلفة أو تصفح الأقسام</Text>
+            </View>
+          }
         />
       ) : (
         <Text style={styles.hint}>اكتب كلمتين على الأقل للبحث في الإعلانات والدليل الطبي</Text>
@@ -93,6 +111,8 @@ const styles = StyleSheet.create({
   medRow: { backgroundColor: colors.white, marginHorizontal: spacing.md, marginBottom: spacing.sm, borderRadius: radius.md, padding: spacing.md },
   medName: { fontSize: fontSize.md, fontWeight: '700', color: colors.text },
   medMeta: { fontSize: fontSize.sm, color: colors.textMuted },
-  empty: { textAlign: 'center', color: colors.textMuted, marginTop: spacing.xl },
+  empty: { textAlign: 'center', color: colors.textMuted, marginTop: spacing.xl, fontSize: fontSize.md },
+  emptyWrap: { alignItems: 'center', marginTop: spacing.xl * 2, gap: 8, paddingHorizontal: spacing.xl },
+  emptySub: { fontSize: fontSize.sm, color: colors.textMuted, marginTop: spacing.sm, textAlign: 'center' },
   hint: { textAlign: 'center', color: colors.textMuted, marginTop: spacing.xl, paddingHorizontal: spacing.xl, lineHeight: 24 },
 });

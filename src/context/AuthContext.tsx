@@ -1,88 +1,147 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { ADMIN_PHONE } from '../config';
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signOut } from '@react-native-firebase/auth';
+import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { ADMIN_EMAIL, GOOGLE_WEB_CLIENT_ID } from '../config';
 import { useRepo } from '../repo/RepoContext';
+import { NewUserInput } from '../repo/types';
 import { AccountType, Store, User } from '../types';
-
-const KEY = 'sharq_user_v1';
 
 interface AuthState {
   user: User | null;
   loading: boolean;
-  // دخول وهمي: أي رقم ← رمز 4 أرقام (أي رمز يُقبل)
-  login: (phone: string, accountType: AccountType) => Promise<User>;
+  signInWithGoogle: () => Promise<void>;
+  needsProfile: boolean; // true إذا دخل بجوجل ولا يوجد مستند users/{uid}
+  completeProfile: (phone: string, accountType: AccountType) => Promise<User>;
   logout: () => Promise<void>;
-  refresh: () => void;
+  refresh: () => void; // إعادة قراءة المستخدم من الـrepo (متزامنة)
 }
 
 const AuthContext = createContext<AuthState | null>(null);
+
+// تهيئة GoogleSignin مرة واحدة فقط
+let googleConfigured = false;
+function ensureGoogleConfigured() {
+  if (googleConfigured) return;
+  if (!GOOGLE_WEB_CLIENT_ID) {
+    throw new Error('لم يُضبط GOOGLE_WEB_CLIENT_ID بعد — أضفه من Firebase Console (Authentication ← Sign-in method ← Google)');
+  }
+  GoogleSignin.configure({ webClientId: GOOGLE_WEB_CLIENT_ID });
+  googleConfigured = true;
+}
+
+const normEmail = (e?: string | null) => (e ?? '').trim().toLowerCase();
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const repo = useRepo();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [needsProfile, setNeedsProfile] = useState(false);
+  const repoRef = useRef(repo);
+  repoRef.current = repo;
 
-  // استعادة الجلسة
+  // استماع لحالة Firebase Auth
   useEffect(() => {
-    (async () => {
-      try {
-        const raw = await AsyncStorage.getItem(KEY);
-        if (raw) {
-          const saved = JSON.parse(raw) as User;
-          // تأكد من وجوده في الـRepo (الذاكرة تُصفَّر مع إعادة التشغيل)
-          let u = repo.getUserByPhone(saved.phone);
-          if (!u) {
-            u = repo.addUser(
-              { phone: saved.phone, accountType: saved.accountType, storeId: saved.storeId },
-              saved.phone === ADMIN_PHONE,
-            );
-          }
-          // المحظور لا تُستعاد جلسته
-          if (u.blocked) {
-            await AsyncStorage.removeItem(KEY);
-          } else {
-            setUser(u);
-          }
-        }
-      } catch {
-        // تجاهل
-      } finally {
+    const unsub = onAuthStateChanged(getAuth(), async fuser => {
+      const r = repoRef.current;
+      if (!fuser) {
+        setUser(null);
+        setNeedsProfile(false);
         setLoading(false);
+        return;
       }
-    })();
-  }, [repo]);
+      const u = r.getUsers().find(x => x.uid === fuser.uid);
+      if (u) {
+        if (u.blocked) {
+          // المحظور تُنهى جلسته فورًا
+          try { await signOut(getAuth()); } catch { /* تجاهل */ }
+          try { await GoogleSignin.signOut(); } catch { /* تجاهل */ }
+          setUser(null);
+        } else {
+          setUser(u);
+        }
+        setNeedsProfile(false);
+      } else {
+        // مستخدم جوجل جديد — لا يوجد مستند users/{uid} → إكمال الملف
+        setUser(null);
+        setNeedsProfile(true);
+      }
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
 
-  const login = useCallback(
+  const signInWithGoogle = useCallback(async (): Promise<void> => {
+    ensureGoogleConfigured();
+    await GoogleSignin.hasPlayServices();
+    const res: any = await GoogleSignin.signIn();
+    const idToken: string | undefined = res?.data?.idToken ?? res?.idToken;
+    if (!idToken) {
+      throw new Error('تعذر الحصول على رمز الدخول من جوجل — حاول مجددًا');
+    }
+    const cred = GoogleAuthProvider.credential(idToken);
+    await signInWithCredential(getAuth(), cred);
+    // onAuthStateChanged سيتكفل بتحديد user/needsProfile
+  }, []);
+
+  const completeProfile = useCallback(
     async (phone: string, accountType: AccountType): Promise<User> => {
-      let u = repo.getUserByPhone(phone);
-      if (!u) {
-        u = repo.addUser({ phone, accountType }, phone === ADMIN_PHONE);
+      const fuser = getAuth().currentUser;
+      if (!fuser) {
+        throw new Error('انتهت جلسة جوجل — سجّل الدخول مجددًا');
       }
-      if (u.blocked) {
-        throw new Error('تم حظر هذا الحساب — تواصل مع إدارة التطبيق');
+      // فحص دفاعي: تحقق من وجود المستند مباشرة في Firestore قبل الإنشاء
+      let exists = false;
+      try {
+        const snap = await getDoc(doc(getFirestore(), 'users', fuser.uid));
+        exists = snap.exists();
+      } catch {
+        exists = false;
       }
+      if (exists) {
+        const u = repoRef.current.getUsers().find(x => x.uid === fuser.uid);
+        if (u) {
+          setUser(u);
+          setNeedsProfile(false);
+          return u;
+        }
+      }
+      const isAdmin = normEmail(fuser.email) === normEmail(ADMIN_EMAIL);
+      const u = repoRef.current.addUser(
+        {
+          uid: fuser.uid,
+          email: fuser.email ?? undefined,
+          displayName: fuser.displayName ?? undefined,
+          phone: phone.trim(),
+          accountType,
+        } as NewUserInput,
+        isAdmin,
+      );
       setUser(u);
-      await AsyncStorage.setItem(KEY, JSON.stringify(u));
+      setNeedsProfile(false);
       return u;
     },
-    [repo],
+    [],
   );
 
   const logout = useCallback(async () => {
     setUser(null);
-    await AsyncStorage.removeItem(KEY);
+    setNeedsProfile(false);
+    try { await GoogleSignin.signOut(); } catch { /* تجاهل */ }
+    await signOut(getAuth());
   }, []);
 
   const refresh = useCallback(() => {
-    if (user) {
-      const u = repo.getUserByPhone(user.phone);
-      if (u) setUser({ ...u });
-    }
-  }, [repo, user]);
+    setUser(prev => {
+      if (!prev?.uid) return prev;
+      const u = repoRef.current.getUsers().find(x => x.uid === prev.uid);
+      return u ? { ...u } : prev;
+    });
+  }, []);
 
   const value = useMemo(
-    () => ({ user, loading, login, logout, refresh }),
-    [user, loading, login, logout, refresh],
+    () => ({ user, loading, signInWithGoogle, needsProfile, completeProfile, logout, refresh }),
+    [user, loading, signInWithGoogle, needsProfile, completeProfile, logout, refresh],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

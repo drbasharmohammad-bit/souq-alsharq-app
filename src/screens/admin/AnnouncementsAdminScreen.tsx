@@ -1,12 +1,12 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
 import { FormField } from '../../components/FormField';
 import { useAuth } from '../../context/AuthContext';
 import { RootStackParamList } from '../../navigation/types';
 import { deleteRemoteAnnouncement, publishRemoteAnnouncement, useAnnouncements } from '../../repo/announcements';
-import { useRepo } from '../../repo/RepoContext';
+import { useRepo, useRepoRefresh } from '../../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../../theme';
 import { formatDateTime } from '../../utils/format';
 
@@ -20,6 +20,17 @@ export function AnnouncementsAdminScreen({}: Props) {
   const [sending, setSending] = useState(false);
 
   const { items, refresh } = useAnnouncements();
+  const refreshRepo = useRepoRefresh();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshRepo();
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   if (!user?.isAdmin) {
     return (
@@ -99,6 +110,7 @@ export function AnnouncementsAdminScreen({}: Props) {
         data={items}
         keyExtractor={a => a.id}
         contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.cardHead}>

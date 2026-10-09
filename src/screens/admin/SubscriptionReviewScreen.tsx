@@ -1,10 +1,10 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
-import { Alert, FlatList, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Image, Modal, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
 import { useAuth } from '../../context/AuthContext';
 import { RootStackParamList } from '../../navigation/types';
-import { useRepo } from '../../repo/RepoContext';
+import { useRepo, useRepoRefresh } from '../../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../../theme';
 import { formatDateTime } from '../../utils/format';
 
@@ -14,6 +14,16 @@ export function SubscriptionReviewScreen({}: Props) {
   const { user } = useAuth();
   const repo = useRepo();
   const [zoomUri, setZoomUri] = useState<string | null>(null);
+  const refreshRepo = useRepoRefresh();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshRepo();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const pending = useMemo(
     () => repo.getSubscriptions().filter(s => s.status === 'pending'),
@@ -52,6 +62,7 @@ export function SubscriptionReviewScreen({}: Props) {
         data={pending}
         keyExtractor={s => s.id}
         contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         renderItem={({ item }) => {
           const merchant = repo.getUserById(item.userId);
           const store = item.storeId ? repo.getStoreById(item.storeId) : undefined;

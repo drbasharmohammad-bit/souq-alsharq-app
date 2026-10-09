@@ -61,6 +61,10 @@ export function PublishFormScreen({ navigation, route }: Props) {
     }
     need('gov', 'المحافظة');
     need('phone', 'رقم الهاتف');
+    need('desc', 'الوصف');
+    if ((isCars || isEstate) && images.length === 0) {
+      e.images = 'أضف صورة واحدة على الأقل للإعلان';
+    }
 
     setErrors(e);
     if (Object.keys(e).length > 0) {
@@ -164,10 +168,13 @@ export function PublishFormScreen({ navigation, route }: Props) {
       {!isEstate && user?.accountType === 'individual' && (
         <FormField label="الاسم (يظهر للزبائن)" value={f.sellerName ?? ''} onChange={v => set('sellerName', v)} placeholder="مثال: أبو محمد" />
       )}
-      <FormField label="الوصف" value={f.desc ?? ''} onChange={v => set('desc', v)} placeholder="اكتب تفاصيل الإعلان..." multiline />
+      <FormField label="الوصف" value={f.desc ?? ''} onChange={v => set('desc', v)} placeholder="اكتب تفاصيل الإعلان..." multiline required error={errors.desc} />
 
       {(isCars || isEstate) && (
-        <ImagePickerField images={images} onChange={setImages} max={6} label="صور الإعلان" />
+        <>
+          <ImagePickerField images={images} onChange={setImages} max={6} label="صور الإعلان" />
+          {errors.images ? <Text style={styles.error}>{errors.images}</Text> : null}
+        </>
       )}
 
       <Pressable style={styles.btn} onPress={submit}>
@@ -186,4 +193,5 @@ const styles = StyleSheet.create({
   warnText: { flex: 1, fontSize: fontSize.sm, color: '#7A5A12', lineHeight: 22 },
   btn: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.sm },
   btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
+  error: { fontSize: fontSize.xs, color: colors.danger, marginTop: -spacing.sm, marginBottom: spacing.md },
 });

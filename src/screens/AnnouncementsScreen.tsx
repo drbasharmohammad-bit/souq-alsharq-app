@@ -1,16 +1,28 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../components/AppIcon';
 import { RootStackParamList } from '../navigation/types';
 import { useAnnouncements } from '../repo/announcements';
+import { useRepoRefresh } from '../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../theme';
 import { formatDateTime } from '../utils/format';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Announcements'>;
 
 export function AnnouncementsScreen({}: Props) {
-  const { items } = useAnnouncements();
+  const { items, refresh } = useAnnouncements();
+  const refreshRepo = useRepoRefresh();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshRepo();
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   return (
     <View style={styles.root}>
@@ -18,6 +30,7 @@ export function AnnouncementsScreen({}: Props) {
         data={items}
         keyExtractor={a => a.id}
         contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.headRow}>

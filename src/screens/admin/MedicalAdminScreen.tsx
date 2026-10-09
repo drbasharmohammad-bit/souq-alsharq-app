@@ -4,7 +4,7 @@ import { AppIcon } from '../../components/AppIcon';
 import { FormField } from '../../components/FormField';
 import { SelectChips } from '../../components/SelectChips';
 import { useAuth } from '../../context/AuthContext';
-import { GOVS, SPECS } from '../../data';
+import { GOVS } from '../../data';
 import { DoctorEntry, LabEntry, PharmacyEntry } from '../../repo/types';
 import { useRepo } from '../../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../../theme';
@@ -25,7 +25,7 @@ interface FormState {
 }
 
 const EMPTY: FormState = {
-  name: '', spec: SPECS[0], gov: 'الحسكة', area: '', phone: '', days: '', hours: '', tests: '', night: false,
+  name: '', spec: '', gov: 'الحسكة', area: '', phone: '', days: '', hours: '', tests: '', night: false,
 };
 
 export function MedicalAdminScreen() {
@@ -58,8 +58,12 @@ export function MedicalAdminScreen() {
       Alert.alert('تنبيه', 'الاسم ورقم الهاتف مطلوبان');
       return;
     }
+    if (tab === 'doctors' && !form.spec.trim()) {
+      Alert.alert('تنبيه', 'الاختصاص مطلوب — أدخل اختصاص الطبيب (مثال: قلبية، أطفال، جلدية...)');
+      return;
+    }
     if (tab === 'doctors') {
-      const d: Doctor = { name: form.name.trim(), spec: form.spec, gov: form.gov, area: form.area.trim() || form.gov, phone: form.phone.trim(), days: form.days.trim() || 'يوميًا', icon: 'doctor' };
+      const d: Doctor = { name: form.name.trim(), spec: form.spec.trim(), gov: form.gov, area: form.area.trim() || form.gov, phone: form.phone.trim(), days: form.days.trim() || 'يوميًا', icon: 'doctor' };
       if (editingId) repo.updateDoctor(editingId, d);
       else repo.addDoctor(d);
     } else if (tab === 'pharms') {
@@ -153,7 +157,7 @@ export function MedicalAdminScreen() {
         </View>
         <FormField label={tab === 'doctors' ? 'اسم الطبيب' : tab === 'pharms' ? 'اسم الصيدلية' : 'اسم المخبر'} value={form.name} onChange={v => set('name', v)} required />
         {tab === 'doctors' && (
-          <SelectChips label="الاختصاص" options={SPECS} value={form.spec} onChange={v => set('spec', v)} />
+          <FormField label="الاختصاص" value={form.spec} onChange={v => set('spec', v)} placeholder="مثال: قلبية، أطفال، جلدية..." required />
         )}
         <SelectChips label="المحافظة" options={GOVS.filter(g => g !== 'الكل')} value={form.gov} onChange={v => set('gov', v)} />
         <FormField label="العنوان" value={form.area} onChange={v => set('area', v)} placeholder="الحي - الشارع" />

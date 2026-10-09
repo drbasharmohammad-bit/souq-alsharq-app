@@ -42,8 +42,8 @@ export function CreateStoreScreen({ navigation }: Props) {
       verified: false,
       featured: false,
     });
-    // ربط المتجر بالمستخدم
-    repo.linkStoreToUser(user.phone, store.id);
+    // ربط المتجر بالمستخدم (بالمعرف uid أو id)
+    repo.linkStoreToUser(user.uid ?? user.id, store.id);
     refresh();
     navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
   };

@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../components/AppIcon';
 import { GovChips } from '../components/GovChips';
 import { PlaceholderImage } from '../components/PlaceholderImage';
-import { GOVS, SPECS } from '../data';
+import { GOVS } from '../data';
 import { useRepo } from '../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../theme';
 
@@ -24,6 +24,21 @@ export function MedicalScreen() {
       ),
     [repo, gov, spec],
   );
+
+  // الاختصاصات الفعلية المسجلة (إدخال حر من الإدارة) — تُشتق ديناميكيًا من البيانات
+  const specs = useMemo(() => {
+    const set = new Set<string>();
+    repo.getDoctors().forEach(d => {
+      const s = (d.spec ?? '').trim();
+      if (s) set.add(s);
+    });
+    return [...set].sort();
+  }, [repo]);
+
+  // إن حُذف الاختصاص المختار من البيانات أعد الفلتر إلى «الكل»
+  useEffect(() => {
+    if (spec !== 'الكل' && !specs.includes(spec)) setSpec('الكل');
+  }, [specs, spec]);
   const pharms = useMemo(() => repo.getPharmacies().filter(p => gov === 'الكل' || p.gov === gov), [repo, gov]);
   const labs = useMemo(() => repo.getLabs().filter(l => gov === 'الكل' || l.gov === gov), [repo, gov]);
 
@@ -59,7 +74,7 @@ export function MedicalScreen() {
 
       <GovChips govs={GOVS} selected={gov} onSelect={setGov} />
       {tab === 'doctors' && (
-        <GovChips govs={['الكل', ...SPECS]} selected={spec} onSelect={setSpec} />
+        <GovChips govs={['الكل', ...specs]} selected={spec} onSelect={setSpec} />
       )}
 
       {tab === 'doctors' && (

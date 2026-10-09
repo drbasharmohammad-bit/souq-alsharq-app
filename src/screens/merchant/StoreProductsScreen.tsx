@@ -1,12 +1,12 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
-import { Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
 import { FabButton } from '../../components/FabButton';
 import { useAuth, useMyStore } from '../../context/AuthContext';
 import { formatPrice } from '../../data';
 import { RootStackParamList } from '../../navigation/types';
-import { useRepo } from '../../repo/RepoContext';
+import { useRepo, useRepoRefresh } from '../../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'StoreProducts'>;
@@ -17,6 +17,16 @@ export function StoreProductsScreen({ navigation }: Props) {
   const store = useMyStore();
   const repo = useRepo();
   const [, force] = useState(0);
+  const refreshRepo = useRepoRefresh();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshRepo();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   if (user?.accountType !== 'merchant' || !store) {
     return (
@@ -48,6 +58,7 @@ export function StoreProductsScreen({ navigation }: Props) {
         data={products}
         keyExtractor={p => p.id}
         contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         renderItem={({ item }) => (
           <View style={styles.card}>
             {item.images.length > 0 ? (

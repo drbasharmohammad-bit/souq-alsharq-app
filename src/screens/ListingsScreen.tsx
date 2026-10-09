@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useMemo } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { FabButton } from '../components/FabButton';
 import { AppIcon } from '../components/AppIcon';
 import { GovChips } from '../components/GovChips';
@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { useGov } from '../context/GovContext';
 import { GOVS } from '../data';
 import { RootStackParamList } from '../navigation/types';
-import { useRepo } from '../repo/RepoContext';
+import { useRepo, useRepoRefresh } from '../repo/RepoContext';
 import { colors, fontSize, spacing } from '../theme';
 import { SectionKey } from '../types';
 
@@ -20,6 +20,16 @@ export function ListingsScreen({ navigation, route }: Props) {
   const { gov, setGov } = useGov();
   const repo = useRepo();
   const { user } = useAuth();
+  const refreshRepo = useRepoRefresh();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshRepo();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const items = useMemo(
     () => repo.getListings({ sec: sectionKey as SectionKey, sub: subKey, gov, status: 'approved' }),
@@ -28,7 +38,7 @@ export function ListingsScreen({ navigation, route }: Props) {
 
   const onFab = () => {
     if (!user) {
-      navigation.navigate('Phone');
+      navigation.navigate('GoogleLogin');
       return;
     }
     if (sectionKey === 'medical') return;
@@ -47,6 +57,7 @@ export function ListingsScreen({ navigation, route }: Props) {
         maxToRenderPerBatch={8}
         windowSize={9}
         removeClippedSubviews
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         renderItem={({ item }) => (
           <ListingCard item={item} onPress={() => navigation.navigate('AdDetail', { listingId: item.id })} />
         )}

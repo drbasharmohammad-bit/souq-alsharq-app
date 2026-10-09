@@ -1,11 +1,11 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../components/AppIcon';
 import { ListingCard } from '../components/ListingCard';
 import { useAuth } from '../context/AuthContext';
 import { RootStackParamList } from '../navigation/types';
-import { useRepo } from '../repo/RepoContext';
+import { useRepo, useRepoRefresh } from '../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../theme';
 import { AdStatus } from '../types';
 
@@ -20,6 +20,16 @@ const STATUS_META: Record<AdStatus, { t: string; bg: string; fg: string; icon: s
 export function MyAdsScreen({ navigation }: Props) {
   const { user } = useAuth();
   const repo = useRepo();
+  const refreshRepo = useRepoRefresh();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshRepo();
+    } finally {
+      setRefreshing(false);
+    }
+  };
   const ads = user ? repo.getUserListings(user.id) : [];
 
   return (
@@ -28,6 +38,7 @@ export function MyAdsScreen({ navigation }: Props) {
         data={ads}
         keyExtractor={a => a.id}
         contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         renderItem={({ item }) => {
           const m = STATUS_META[item.status];
           return (

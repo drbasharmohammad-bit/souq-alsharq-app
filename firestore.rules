@@ -1,0 +1,111 @@
+rules_version = '2';
+
+// سوق الشرق — قواعد Firestore
+// - قراءة عامة لكل المحتوى (بما فيها الإعلانات الإدارية).
+// - الكتابة على المحتوى المملوك للمالك (ownerUid) أو الإدارة.
+// - مستندات المستخدمين: الإنشاء لمن يملك الـuid، التحديث للمالك أو الإدارة، الحذف للإدارة.
+// - announcements/banners/doctors/pharmacies/labs/featured_settings: الكتابة للإدارة فقط.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'drbasharmohammad@gmail.com';
+    }
+
+    // المالك الحالي للمستند الموجود
+    function ownsDoc() {
+      return isSignedIn()
+        && resource.data.ownerUid == request.auth.uid;
+    }
+
+    // منشئ المستند الجديد يملكه
+    function createsOwnDoc() {
+      return isSignedIn()
+        && request.resource.data.ownerUid == request.auth.uid;
+    }
+
+    // ——— محتوى المستخدمين: قراءة عامة، كتابة للمالك أو الإدارة ———
+    match /listings/{docId} {
+      allow read: if true;
+      allow create: if createsOwnDoc();
+      allow update, delete: if ownsDoc() || isAdmin();
+    }
+
+    match /stores/{docId} {
+      allow read: if true;
+      allow create: if createsOwnDoc();
+      allow update, delete: if ownsDoc() || isAdmin();
+    }
+
+    match /products/{docId} {
+      allow read: if true;
+      allow create: if createsOwnDoc();
+      allow update, delete: if ownsDoc() || isAdmin();
+    }
+
+    match /reviews/{docId} {
+      allow read: if true;
+      allow create: if createsOwnDoc();
+      allow update, delete: if ownsDoc() || isAdmin();
+    }
+
+    match /subscriptions/{docId} {
+      allow read: if true;
+      allow create: if createsOwnDoc();
+      allow update, delete: if ownsDoc() || isAdmin();
+    }
+
+    match /featured_requests/{docId} {
+      allow read: if true;
+      allow create: if createsOwnDoc();
+      allow update, delete: if ownsDoc() || isAdmin();
+    }
+
+    // ——— المستخدمون ———
+    match /users/{uid} {
+      allow read: if true;
+      allow create: if isSignedIn() && uid == request.auth.uid;
+      // المالك يحدّث بياناته لكن لا يمنح نفسه صلاحية الإدارة
+      allow update: if isAdmin()
+        || (isSignedIn() && uid == request.auth.uid
+            && request.resource.data.isAdmin == resource.data.isAdmin);
+      allow delete: if isAdmin();
+    }
+
+    // ——— محتوى الإدارة فقط (قراءة عامة) ———
+    match /announcements/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /banners/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /doctors/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /pharmacies/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /labs/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /featured_settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

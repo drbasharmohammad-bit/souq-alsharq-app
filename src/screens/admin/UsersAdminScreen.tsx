@@ -24,9 +24,14 @@ export function UsersAdminScreen({}: Props) {
 
   const users = useMemo(() => {
     const all = repo.getUsers();
-    const q = query.trim();
+    const q = query.trim().toLowerCase();
     if (!q) return all;
-    return all.filter(u => u.phone.includes(q));
+    return all.filter(
+      u =>
+        u.phone.includes(q) ||
+        (u.displayName ?? '').toLowerCase().includes(q) ||
+        (u.email ?? '').toLowerCase().includes(q),
+    );
   }, [repo, query]);
 
   if (!user?.isAdmin) {
@@ -40,14 +45,14 @@ export function UsersAdminScreen({}: Props) {
     );
   }
 
-  const toggleBlock = (id: string, phone: string, blocked?: boolean) => {
+  const toggleBlock = (id: string, label: string, blocked?: boolean) => {
     if (id === user.id) {
       Alert.alert('تنبيه', 'لا يمكنك حظر حسابك الخاص');
       return;
     }
     Alert.alert(
       blocked ? 'فك حظر المستخدم' : 'حظر المستخدم',
-      blocked ? `سيتمكن ${phone} من الدخول والنشر مجددًا` : `لن يتمكن ${phone} من الدخول أو النشر`,
+      blocked ? `سيتمكن ${label} من الدخول والنشر مجددًا` : `لن يتمكن ${label} من الدخول أو النشر`,
       [
         { text: 'إلغاء', style: 'cancel' },
         {
@@ -65,11 +70,11 @@ export function UsersAdminScreen({}: Props) {
         <AppIcon name="magnify" size={20} color={colors.textMuted} />
         <TextInput
           style={styles.search}
-          placeholder="بحث برقم الهاتف..."
+          placeholder="بحث بالاسم / الإيميل / الهاتف..."
           placeholderTextColor={colors.textMuted}
           value={query}
           onChangeText={setQuery}
-          keyboardType="phone-pad"
+          keyboardType="default"
         />
       </View>
 
@@ -90,7 +95,9 @@ export function UsersAdminScreen({}: Props) {
                   color={item.blocked ? colors.danger : colors.primary}
                 />
                 <View style={styles.headBody}>
-                  <Text style={styles.phone}>{item.phone}</Text>
+                  <Text style={styles.phone}>{item.displayName || item.email || item.phone || '—'}</Text>
+                  {item.phone ? <Text style={styles.meta}>{item.phone}</Text> : null}
+                  {item.email ? <Text style={styles.meta}>{item.email}</Text> : null}
                   <Text style={styles.meta}>
                     {isMerchant ? 'تاجر' : 'فرد'}
                     {store ? ` • ${store.name}` : ''}
@@ -103,7 +110,7 @@ export function UsersAdminScreen({}: Props) {
               {!item.isAdmin && (
                 <Pressable
                   style={[styles.blockBtn, item.blocked ? styles.unblock : styles.block]}
-                  onPress={() => toggleBlock(item.id, item.phone, item.blocked)}>
+                  onPress={() => toggleBlock(item.id, item.displayName || item.email || item.phone, item.blocked)}>
                   <View style={styles.btnRow}>
                     <AppIcon name={item.blocked ? 'check-circle' : 'block-helper'} size={16} color={colors.white} />
                     <Text style={styles.btnText}>{item.blocked ? 'فك الحظر' : 'حظر'}</Text>

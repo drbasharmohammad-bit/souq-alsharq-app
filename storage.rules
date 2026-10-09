@@ -1,0 +1,20 @@
+rules_version = '2';
+
+// سوق الشرق — قواعد Storage
+// - uploads/{userId}/**: القراءة عامة، الكتابة لمن يملك الـuserId فقط.
+// - admin/**: القراءة عامة، الكتابة للإدارة فقط.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    match /uploads/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /admin/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.auth.token.email == 'drbasharmohammad@gmail.com';
+    }
+  }
+}

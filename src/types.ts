@@ -34,6 +34,7 @@ export interface Spec {
 }
 
 export interface Listing {
+  ownerUid?: string; // Firebase Auth uid للمالك
   id: string;
   kind: ListingKind;
   name: string;
@@ -59,6 +60,7 @@ export interface Listing {
 }
 
 export interface Product {
+  ownerUid?: string; // Firebase Auth uid للمالك
   id: string;
   storeId: string;
   name: string;
@@ -71,7 +73,10 @@ export interface Product {
 
 export interface User {
   id: string;
-  phone: string;
+  uid?: string; // Firebase Auth uid — هوية الدخول الأساسية (Google Sign-In)
+  email?: string;
+  displayName?: string;
+  phone: string; // رقم التواصل — ثانوي للعرض فقط
   accountType: AccountType;
   storeId?: string;
   isAdmin: boolean;
@@ -80,6 +85,7 @@ export interface User {
 }
 
 export interface Subscription {
+  ownerUid?: string; // Firebase Auth uid للمالك
   id: string;
   userId: string;
   storeId?: string;
@@ -113,6 +119,7 @@ export interface Banner {
 export type FeaturedRequestStatus = 'pending' | 'active' | 'rejected' | 'expired';
 
 export interface FeaturedRequest {
+  ownerUid?: string; // Firebase Auth uid للمالك
   id: string;
   storeId: string;
   userId: string;
@@ -130,6 +137,7 @@ export interface FeaturedSettings {
 }
 
 export interface Store {
+  ownerUid?: string; // Firebase Auth uid للمالك
   id: string;
   name: string;
   sec: string;

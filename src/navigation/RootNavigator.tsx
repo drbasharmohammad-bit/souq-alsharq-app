@@ -1,7 +1,8 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { navigationRef } from './navigationRef';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useState } from 'react';
 import { AuthProvider } from '../context/AuthContext';
 import { FavoritesProvider } from '../context/FavoritesContext';
 import { GovProvider } from '../context/GovContext';
@@ -17,10 +18,9 @@ import { SubscriptionReviewScreen } from '../screens/admin/SubscriptionReviewScr
 import { UsersAdminScreen } from '../screens/admin/UsersAdminScreen';
 import { AnnouncementsScreen } from '../screens/AnnouncementsScreen';
 import { AdDetailScreen } from '../screens/AdDetailScreen';
-import { AccountTypeScreen } from '../screens/auth/AccountTypeScreen';
+import { CompleteProfileScreen } from '../screens/auth/CompleteProfileScreen';
 import { CreateStoreScreen } from '../screens/auth/CreateStoreScreen';
-import { OtpScreen } from '../screens/auth/OtpScreen';
-import { PhoneScreen } from '../screens/auth/PhoneScreen';
+import { GoogleLoginScreen } from '../screens/auth/GoogleLoginScreen';
 import { DetailScreen } from '../screens/DetailScreen';
 import { ListingsScreen } from '../screens/ListingsScreen';
 import { MedicalScreen } from '../screens/MedicalScreen';
@@ -33,6 +33,7 @@ import { PublishSectionScreen } from '../screens/publish/PublishSectionScreen';
 import { PublishSubScreen } from '../screens/publish/PublishSubScreen';
 import { PublishSuccessScreen } from '../screens/publish/PublishSuccessScreen';
 import { SearchScreen } from '../screens/SearchScreen';
+import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { StoreDetailScreen } from '../screens/StoreDetailScreen';
 import { SubCategoriesScreen } from '../screens/SubCategoriesScreen';
 import { SubscriptionScreen } from '../screens/SubscriptionScreen';
@@ -42,19 +43,38 @@ import { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-export function RootNavigator() {
+const ONBOARDING_KEY = 'sharq_onboarding_seen';
+
+/** الترحيب لمرة واحدة: يظهر فقط عند أول تشغيل ثم لا يظهر أبدًا */
+function AppRoot() {
+  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(ONBOARDING_KEY)
+      .then(v => setShowOnboarding(v !== '1'))
+      .catch(() => setShowOnboarding(false));
+  }, []);
+
+  const done = async () => {
+    try {
+      await AsyncStorage.setItem(ONBOARDING_KEY, '1');
+    } catch {
+      // تجاهل
+    }
+    setShowOnboarding(false);
+  };
+
+  if (showOnboarding === null) return null;
+  if (showOnboarding) return <OnboardingScreen onDone={done} />;
+
   return (
-    <RepoProvider>
-      <GovProvider>
-      <AuthProvider>
-        <FavoritesProvider>
-          <NavigationContainer ref={navigationRef}>
-            <Stack.Navigator
-              screenOptions={{
-                headerStyle: { backgroundColor: colors.primary },
-                headerTintColor: colors.white,
-                headerTitleStyle: { fontWeight: '700' },
-              }}>
+    <NavigationContainer ref={navigationRef}>
+      <Stack.Navigator
+        screenOptions={{
+          headerStyle: { backgroundColor: colors.primary },
+          headerTintColor: colors.white,
+          headerTitleStyle: { fontWeight: '700' },
+        }}>
               <Stack.Screen name="Tabs" component={TabsNavigator} options={{ headerShown: false }} />
               <Stack.Screen name="SubCategories" component={SubCategoriesScreen} options={{ title: 'التصنيفات' }} />
               <Stack.Screen name="Listings" component={ListingsScreen} options={({ route }) => ({ title: route.params.title })} />
@@ -63,10 +83,9 @@ export function RootNavigator() {
               <Stack.Screen name="StoreDetail" component={StoreDetailScreen} options={{ headerShown: false }} />
               <Stack.Screen name="Medical" component={MedicalScreen} options={{ title: 'القسم الطبي' }} />
               <Stack.Screen name="Search" component={SearchScreen} options={{ title: 'البحث' }} />
-              {/* الحسابات */}
-              <Stack.Screen name="Phone" component={PhoneScreen} options={{ title: 'تسجيل الدخول' }} />
-              <Stack.Screen name="Otp" component={OtpScreen} options={{ title: 'رمز التحقق' }} />
-              <Stack.Screen name="AccountType" component={AccountTypeScreen} options={{ title: 'نوع الحساب' }} />
+              {/* الحسابات — الدخول بحساب جوجل */}
+              <Stack.Screen name="GoogleLogin" component={GoogleLoginScreen} options={{ title: 'تسجيل الدخول' }} />
+              <Stack.Screen name="CompleteProfile" component={CompleteProfileScreen} options={{ title: 'إكمال البيانات' }} />
               <Stack.Screen name="CreateStore" component={CreateStoreScreen} options={{ title: 'إنشاء متجر' }} />
               {/* النشر */}
               <Stack.Screen name="PublishSection" component={PublishSectionScreen} options={{ title: 'إعلان جديد' }} />
@@ -91,7 +110,17 @@ export function RootNavigator() {
               <Stack.Screen name="AdminFeaturedSettings" component={FeaturedSettingsScreen} options={{ title: 'إعدادات التمييز' }} />
               <Stack.Screen name="Announcements" component={AnnouncementsScreen} options={{ title: 'إعلانات الإدارة' }} />
             </Stack.Navigator>
-          </NavigationContainer>
+    </NavigationContainer>
+  );
+}
+
+export function RootNavigator() {
+  return (
+    <RepoProvider>
+      <GovProvider>
+      <AuthProvider>
+        <FavoritesProvider>
+          <AppRoot />
         </FavoritesProvider>
       </AuthProvider>
       </GovProvider>

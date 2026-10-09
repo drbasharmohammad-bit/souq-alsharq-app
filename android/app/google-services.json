@@ -12,7 +12,20 @@
           "package_name": "sy.medpro.sharq"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "885355670157-2oj19bq7th0m1bm2bso0jk2p5u864oe3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "sy.medpro.sharq",
+            "certificate_hash": "0aceb7aa118636544b326379415eb632340ffbff"
+          }
+        },
+        {
+          "client_id": "885355670157-ro8ich2vjaq8rqh8e0d2fm7ddr5kva8s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDi8kGqsMQEQQgptjtJB5VemS73gxj_Emg"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "885355670157-ro8ich2vjaq8rqh8e0d2fm7ddr5kva8s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

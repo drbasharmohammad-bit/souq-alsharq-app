@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
 import { ListingCard } from '../../components/ListingCard';
 import { useAuth } from '../../context/AuthContext';
-import { useRepo } from '../../repo/RepoContext';
+import { useRepo, useRepoRefresh } from '../../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../../theme';
 import { AdStatus } from '../../types';
 
@@ -13,6 +13,16 @@ export function ReviewScreen() {
   const { user } = useAuth();
   const repo = useRepo();
   const [filter, setFilter] = useState<Filter>('all');
+  const refreshRepo = useRepoRefresh();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshRepo();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const items = useMemo(() => {
     let list = repo.getListings({ status: 'pending' });
@@ -60,6 +70,7 @@ export function ReviewScreen() {
         data={items}
         keyExtractor={l => l.id}
         contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <ListingCard item={item} onPress={() => {}} />

@@ -26,8 +26,13 @@ export function AddProductScreen({ navigation }: Props) {
   const save = () => {
     const e: Record<string, string> = {};
     if (!name.trim()) e.name = 'اسم الصنف مطلوب';
+    if (!desc.trim()) e.desc = 'وصف الصنف مطلوب';
+    if (images.length === 0) e.images = 'أضف صورة واحدة على الأقل للصنف';
     setErrors(e);
-    if (Object.keys(e).length > 0) return;
+    if (Object.keys(e).length > 0) {
+      Alert.alert('تنبيه', 'أكمل الحقول المطلوبة');
+      return;
+    }
     if (!user || !store) {
       Alert.alert('خطأ', 'تعذر تحديد المتجر');
       return;
@@ -59,8 +64,9 @@ export function AddProductScreen({ navigation }: Props) {
       <Text style={styles.sub}>أضف صنفًا جديدًا إلى «{store.name}»</Text>
       <FormField label="اسم الصنف" value={name} onChange={setName} placeholder="مثال: وجبة مشاوي مشكلة" required error={errors.name} />
       <FormField label="السعر (ل.س)" value={price} onChange={setPrice} placeholder="اتركه فارغًا لـ «حسب الاتفاق»" keyboardType="numeric" />
-      <FormField label="الوصف" value={desc} onChange={setDesc} placeholder="تفاصيل الصنف..." multiline />
+      <FormField label="الوصف" value={desc} onChange={setDesc} placeholder="تفاصيل الصنف..." multiline required error={errors.desc} />
       <ImagePickerField images={images} onChange={setImages} max={6} label="صور الصنف" />
+      {errors.images ? <Text style={styles.error}>{errors.images}</Text> : null}
       <Pressable style={styles.btn} onPress={save}>
         <AppIcon name="plus" size={18} color={colors.white} />
         <Text style={styles.btnText}>إضافة الصنف</Text>
@@ -76,4 +82,5 @@ const styles = StyleSheet.create({
   empty: { textAlign: 'center', marginTop: 60, color: colors.textMuted, fontSize: fontSize.md },
   btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.sm },
   btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
+  error: { fontSize: fontSize.xs, color: colors.danger, marginTop: -spacing.sm, marginBottom: spacing.md },
 });

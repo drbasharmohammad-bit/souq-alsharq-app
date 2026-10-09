@@ -34,10 +34,10 @@ export function AccountScreen({ navigation }: Props) {
         <Text style={styles.title}>مرحبًا بك في سوق الشرق</Text>
         <Text style={styles.sub}>سجّل دخولك لتتمكن من نشر الإعلانات وإدارة متجرك</Text>
 
-        <Pressable style={[styles.btn, styles.btnPrimary]} onPress={() => navigation.navigate('Phone')}>
+        <Pressable style={[styles.btn, styles.btnPrimary]} onPress={() => navigation.navigate('GoogleLogin')}>
           <View style={styles.btnRow}>
-            <AppIcon name="cellphone" size={18} color={colors.white} />
-            <Text style={styles.btnText}>تسجيل الدخول برقم الهاتف</Text>
+            <AppIcon name="google" size={18} color={colors.white} />
+            <Text style={styles.btnText}>تسجيل الدخول بحساب جوجل</Text>
           </View>
         </Pressable>
 
@@ -59,6 +59,8 @@ export function AccountScreen({ navigation }: Props) {
 
   const isMerchant = user.accountType === 'merchant';
 
+  const displayName = user.displayName?.trim() || (isMerchant && store ? store.name : 'حسابي');
+
   const doLogout = () => {
     Alert.alert('تسجيل الخروج', 'متأكد؟', [
       { text: 'إلغاء', style: 'cancel' },
@@ -77,12 +79,22 @@ export function AccountScreen({ navigation }: Props) {
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.wrap}>
       <PlaceholderImage icon={isMerchant ? 'storefront' : 'account'} color={colors.primary} size={72} />
-      <Text style={styles.title}>{isMerchant && store ? store.name : 'حسابي'}</Text>
+      <Text style={styles.title}>{displayName}</Text>
       <View style={styles.subRow}>
         <AppIcon name={isMerchant ? 'storefront' : 'account'} size={15} color={colors.textMuted} />
         <Text style={styles.sub}>{isMerchant ? 'حساب تاجر' : 'حساب فرد'}</Text>
-        <AppIcon name="phone" size={15} color={colors.textMuted} />
-        <Text style={styles.sub}>{user.phone}</Text>
+        {user.phone ? (
+          <>
+            <AppIcon name="phone" size={15} color={colors.textMuted} />
+            <Text style={styles.sub}>{user.phone}</Text>
+          </>
+        ) : null}
+        {user.email ? (
+          <>
+            <AppIcon name="email" size={15} color={colors.textMuted} />
+            <Text style={styles.sub}>{user.email}</Text>
+          </>
+        ) : null}
         {user.isAdmin && <AppIcon name="shield-account" size={15} color={colors.gold} />}
         {user.isAdmin && <Text style={styles.sub}>مدير</Text>}
       </View>

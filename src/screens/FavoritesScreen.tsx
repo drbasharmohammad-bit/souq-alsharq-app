@@ -1,13 +1,13 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { CompositeScreenProps } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useMemo } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../components/AppIcon';
 import { ListingCard } from '../components/ListingCard';
 import { useFavorites } from '../context/FavoritesContext';
 import { RootStackParamList, TabsParamList } from '../navigation/types';
-import { useRepo } from '../repo/RepoContext';
+import { useRepo, useRepoRefresh } from '../repo/RepoContext';
 import { colors, fontSize, spacing } from '../theme';
 
 type Props = CompositeScreenProps<
@@ -22,6 +22,16 @@ export function FavoritesScreen({ navigation }: Props) {
     () => favorites.map(id => repo.getListingById(id)).filter((l): l is NonNullable<typeof l> => !!l),
     [favorites, repo],
   );
+  const refreshRepo = useRepoRefresh();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshRepo();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   return (
     <View style={styles.root}>
@@ -31,6 +41,7 @@ export function FavoritesScreen({ navigation }: Props) {
         contentContainerStyle={styles.list}
         initialNumToRender={8}
         maxToRenderPerBatch={8}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         renderItem={({ item }) => (
           <ListingCard item={item} onPress={() => navigation.navigate('AdDetail', { listingId: item.id })} />
         )}
@@ -50,7 +61,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   list: { paddingVertical: spacing.sm },
   emptyWrap: { alignItems: 'center', marginTop: spacing.xl * 3, paddingHorizontal: spacing.xl },
-  emptyIcon: { fontSize: 48 },
   empty: { fontSize: fontSize.md, fontWeight: '700', color: colors.text, marginTop: spacing.md },
   emptySub: { fontSize: fontSize.sm, color: colors.textMuted, marginTop: spacing.sm, textAlign: 'center' },
 });

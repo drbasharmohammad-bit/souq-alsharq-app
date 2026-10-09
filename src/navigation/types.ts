@@ -16,11 +16,10 @@ export type RootStackParamList = {
   AdDetail: { listingId?: string; productId?: string };
   Medical: undefined;
   Search: { q?: string } | undefined;
-  // المرحلة 2: الحسابات
-  Phone: undefined;
-  Otp: { phone: string };
-  AccountType: { phone: string };
-  CreateStore: { phone: string };
+  // الحسابات — الدخول بحساب جوجل
+  GoogleLogin: undefined;
+  CompleteProfile: undefined;
+  CreateStore: undefined;
   // المرحلة 2: النشر
   PublishSection: undefined;
   PublishSub: { sectionKey: string };

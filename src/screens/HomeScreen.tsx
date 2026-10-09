@@ -2,20 +2,20 @@ import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { CompositeScreenProps } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useMemo, useState } from 'react';
-import { Dimensions, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Dimensions, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../components/AppIcon';
 import { GovChips } from '../components/GovChips';
-import { ListingCard } from '../components/ListingCard';
 import { PlaceholderImage } from '../components/PlaceholderImage';
 import { useGov } from '../context/GovContext';
-import { GOVS, SECTIONS } from '../data';
+import { useFavorites } from '../context/FavoritesContext';
+import { GOVS, SECTIONS, formatPrice, sectionName } from '../data';
 import { RootStackParamList, TabsParamList } from '../navigation/types';
 import { useAnnouncements } from '../repo/announcements';
-import { useRepo } from '../repo/RepoContext';
+import { useRepo, useRepoRefresh } from '../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../theme';
 import { showToast } from '../utils/toast';
-import { Banner as BannerT } from '../types';
+import { Banner as BannerT, Listing, Store } from '../types';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<TabsParamList, 'Home'>,
@@ -28,7 +28,11 @@ const BANNERS = [
   { id: 'b3', title: 'دليل طبي موثق', sub: 'أطباء وصيدليات ببيانات مؤكدة من الإدارة', c: '#1E6FA3', icon: 'stethoscope' },
 ];
 
-const PAGE = Dimensions.get('window').width - spacing.md * 2;
+const W = Dimensions.get('window').width;
+const PAGE = W - spacing.md * 2;
+const STORE_CARD_W = 168;
+const SECTION_CARD_W = 96;
+const AD_CARD_W = (W - spacing.md * 2 - spacing.sm) / 2;
 
 type CarouselItem =
   | { kind: 'featured'; id: string; imageUri: string; storeId: string }
@@ -39,12 +43,24 @@ export function HomeScreen({ navigation }: Props) {
   const { gov, setGov } = useGov();
   const [dismissedId, setDismissedId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
   const repo = useRepo();
+  const refreshRepo = useRepoRefresh();
+  const { toggle, isFav } = useFavorites();
 
   useEffect(() => {
     AsyncStorage.getItem('sharq_ann_dismissed').then(v => setDismissedId(v));
     repo.getActiveFeatured(); // تنظيف المنتهية
   }, [repo]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refreshRepo();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshRepo]);
 
   const { items: remoteAnns } = useAnnouncements();
   const latestAnn = (remoteAnns.length > 0 ? remoteAnns : repo.getAnnouncements())[0];
@@ -160,8 +176,70 @@ export function HomeScreen({ navigation }: Props) {
     return inner;
   };
 
+  const renderStoreCard = (store: Store) => (
+    <Pressable key={store.id} onPress={() => goStore(store.id)}>
+      <View style={styles.storeCard}>
+        <View style={[styles.storeImgWrap, { backgroundColor: store.g1 + '1F' }]}>
+          <PlaceholderImage icon={store.icon} color={store.g1} size={72} />
+          <View style={styles.storeBadge}>
+            <AppIcon name="star" size={10} color={colors.white} />
+            <Text style={styles.storeBadgeText}>مميز</Text>
+          </View>
+        </View>
+        <View style={styles.storeBody}>
+          <Text style={styles.storeName} numberOfLines={1}>{store.name}</Text>
+          <Text style={styles.storeMeta} numberOfLines={1}>
+            {sectionName(store.sec)} • {store.gov}
+          </Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+
+  const renderAdCard = (item: Listing) => {
+    const fav = isFav(item.id);
+    const priceText = item.price === null ? 'السعر عند الاتصال' : formatPrice(item.price, item.priceNote);
+    return (
+      <Pressable
+        key={item.id}
+        style={styles.adCard}
+        onPress={() => navigation.navigate('AdDetail', { listingId: item.id })}>
+        <View style={[styles.adImgWrap, { backgroundColor: item.g1 + '1F' }]}>
+          <PlaceholderImage icon={item.icon} color={item.g1} size={52} />
+          <Pressable style={styles.favBtn} hitSlop={8} onPress={() => toggle(item.id)}>
+            <AppIcon name={fav ? 'heart' : 'heart-outline'} size={20} color={colors.danger} />
+          </Pressable>
+        </View>
+        <View style={styles.adBody}>
+          <Text style={styles.adName} numberOfLines={2}>{item.name}</Text>
+          <Text
+            style={[styles.adPrice, item.price === null && styles.adPriceNote]}
+            numberOfLines={1}>
+            {priceText}
+          </Text>
+          <View style={styles.adLocRow}>
+            <AppIcon name="map-marker" size={12} color={colors.textMuted} />
+            <Text style={styles.adLoc} numberOfLines={1}>
+              {item.area ? `${item.area}، ${item.gov}` : item.gov}
+            </Text>
+          </View>
+        </View>
+      </Pressable>
+    );
+  };
+
+  const renderEmptyState = (icon: string, text: string) => (
+    <View style={styles.emptyState}>
+      <AppIcon name={icon} size={40} color={colors.textMuted} />
+      <Text style={styles.emptyText}>{text}</Text>
+    </View>
+  );
+
   return (
-    <ScrollView style={styles.root} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.root}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}>
       {/* الهيدر */}
       <View style={styles.header}>
         <View style={styles.logoRow}>
@@ -220,62 +298,52 @@ export function HomeScreen({ navigation }: Props) {
         )}
       </View>
 
-      {/* شبكة الأقسام */}
+      {/* بطاقات الأقسام */}
       <Text style={styles.secTitlePlain}>الأقسام</Text>
-      <View style={styles.grid}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.sectionList}>
         {SECTIONS.map(s => (
-          <Pressable key={s.key} style={styles.tile} onPress={() => goSection(s.key)}>
-            <View style={[styles.tileIcon, { backgroundColor: s.g1 + '1A' }]}>
-              <AppIcon name={s.icon} size={26} color={s.g1} />
+          <Pressable key={s.key} onPress={() => goSection(s.key)}>
+            <View style={styles.sectionCard}>
+              <View style={[styles.sectionIcon, { backgroundColor: s.g1 + '1A' }]}>
+                <AppIcon name={s.icon} size={28} color={s.g1} />
+              </View>
+              <Text style={styles.sectionName} numberOfLines={2}>{s.name}</Text>
             </View>
-            <Text style={styles.tileName}>{s.name}</Text>
           </Pressable>
         ))}
-      </View>
+      </ScrollView>
 
-      {/* متاجر مميزة */}
+      {/* المتاجر المميزة */}
       <View style={styles.secTitleRow}>
         <AppIcon name="star" size={20} color={colors.gold} />
         <Text style={styles.secTitle}>متاجر مميزة</Text>
       </View>
-      <FlatList
-        horizontal
-        data={stores}
-        keyExtractor={s => s.id}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.hList}
-        initialNumToRender={5}
-        maxToRenderPerBatch={5}
-        renderItem={({ item }) => (
-          <Pressable onPress={() => goStore(item.id)}>
-            <View style={styles.storeCard}>
-              <PlaceholderImage icon={item.icon} color={item.g1} size={56} />
-              <Text style={styles.storeName} numberOfLines={1}>{item.name}</Text>
-              <View style={styles.storeMetaRow}>
-                <AppIcon name="map-marker" size={12} color={colors.textMuted} />
-                <Text style={styles.storeMeta} numberOfLines={1}>{item.gov}</Text>
-              </View>
-            </View>
-          </Pressable>
-        )}
-      />
+      {stores.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.storeList}>
+          {stores.map(renderStoreCard)}
+        </ScrollView>
+      ) : (
+        renderEmptyState('storefront-outline', 'لا توجد متاجر في هذه المحافظة بعد')
+      )}
 
-      {/* منتجات مميزة */}
+      {/* إعلانات مميزة */}
       <View style={styles.secTitleRow}>
-        <AppIcon name="sparkles" size={20} color={colors.gold} />
+        <AppIcon name="tag" size={20} color={colors.gold} />
         <Text style={styles.secTitle}>إعلانات مميزة</Text>
       </View>
-      <FlatList
-        data={featured}
-        keyExtractor={l => l.id}
-        scrollEnabled={false}
-        initialNumToRender={6}
-        maxToRenderPerBatch={6}
-        windowSize={7}
-        renderItem={({ item }) => (
-          <ListingCard item={item} onPress={() => navigation.navigate('AdDetail', { listingId: item.id })} />
-        )}
-      />
+      {featured.length > 0 ? (
+        <View style={styles.adGrid}>
+          {featured.map(renderAdCard)}
+        </View>
+      ) : (
+        renderEmptyState('tag-outline', 'لا توجد إعلانات مميزة حاليًا')
+      )}
       <View style={{ height: spacing.xl }} />
     </ScrollView>
   );
@@ -295,7 +363,6 @@ const styles = StyleSheet.create({
   },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   searchHint: { color: colors.textMuted, fontSize: fontSize.sm, flex: 1 },
-  hidden: { display: 'none' },
   bannerWrap: { marginTop: spacing.md },
   page: { width: PAGE },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: spacing.sm },
@@ -345,28 +412,99 @@ const styles = StyleSheet.create({
   secTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, margin: spacing.md, marginBottom: spacing.sm },
   secTitle: { fontSize: fontSize.lg, fontWeight: '800', color: colors.text },
   secTitlePlain: { fontSize: fontSize.lg, fontWeight: '800', color: colors.text, margin: spacing.md, marginBottom: spacing.sm },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.sm },
-  tile: {
-    width: '31%',
+  // بطاقات الأقسام
+  sectionList: { paddingHorizontal: spacing.md, gap: spacing.sm },
+  sectionCard: {
+    width: SECTION_CARD_W,
     backgroundColor: colors.card,
     borderRadius: radius.md,
     alignItems: 'center',
-    padding: spacing.md,
-    margin: '1%',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
     elevation: 1,
   },
-  tileIcon: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
-  tileName: { fontSize: fontSize.xs, fontWeight: '700', color: colors.text, marginTop: 6, textAlign: 'center' },
-  hList: { paddingHorizontal: spacing.md, gap: spacing.md },
+  sectionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionName: { fontSize: fontSize.xs, fontWeight: '700', color: colors.text, marginTop: 6, textAlign: 'center' },
+  // بطاقات المتاجر المميزة
+  storeList: { paddingHorizontal: spacing.md, gap: spacing.md },
   storeCard: {
+    width: STORE_CARD_W,
     backgroundColor: colors.card,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-    width: 130,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
     elevation: 1,
   },
-  storeName: { fontSize: fontSize.sm, fontWeight: '700', color: colors.text, marginTop: 6 },
-  storeMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  storeMeta: { fontSize: fontSize.xs, color: colors.textMuted, flex: 1 },
+  storeImgWrap: {
+    height: 110,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  storeBadge: {
+    position: 'absolute',
+    top: 8,
+    start: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.gold,
+    borderRadius: radius.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  storeBadgeText: { color: colors.white, fontSize: fontSize.xs, fontWeight: '800' },
+  storeBody: { padding: spacing.sm },
+  storeName: { fontSize: fontSize.sm, fontWeight: '800', color: colors.text },
+  storeMeta: { fontSize: fontSize.xs, color: colors.textMuted, marginTop: 2 },
+  // شبكة الإعلانات المميزة
+  adGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+  },
+  adCard: {
+    width: AD_CARD_W,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    elevation: 1,
+  },
+  adImgWrap: {
+    height: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  favBtn: {
+    position: 'absolute',
+    top: 6,
+    start: 6,
+    backgroundColor: colors.white,
+    borderRadius: 18,
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+  },
+  adBody: { padding: spacing.sm },
+  adName: { fontSize: fontSize.sm, fontWeight: '700', color: colors.text, minHeight: 32 },
+  adPrice: { fontSize: fontSize.md, fontWeight: '800', color: colors.primary, marginTop: 4 },
+  adPriceNote: { color: colors.textMuted, fontSize: fontSize.sm, fontWeight: '700' },
+  adLocRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 4 },
+  adLoc: { fontSize: fontSize.xs, color: colors.textMuted, flex: 1 },
+  // حالة الفراغ
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+  },
+  emptyText: { fontSize: fontSize.sm, color: colors.textMuted, textAlign: 'center' },
 });

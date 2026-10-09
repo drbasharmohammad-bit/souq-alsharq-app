@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
-import { Alert, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
 import { FormField } from '../../components/FormField';
 import { ImagePickerField } from '../../components/ImagePickerField';
@@ -8,7 +8,7 @@ import { SelectChips } from '../../components/SelectChips';
 import { GOVS, SECTIONS } from '../../data';
 import { useAuth } from '../../context/AuthContext';
 import { RootStackParamList } from '../../navigation/types';
-import { useRepo } from '../../repo/RepoContext';
+import { useRepo, useRepoRefresh } from '../../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../../theme';
 import { BannerTargetType } from '../../types';
 import { formatDateTime } from '../../utils/format';
@@ -29,6 +29,16 @@ export function BannersAdminScreen({}: Props) {
 
   const banners = useMemo(() => repo.getBanners(), [repo]);
   const stores = useMemo(() => repo.getStores(), [repo]);
+  const refreshRepo = useRepoRefresh();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshRepo();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   if (!user?.isAdmin) {
     return (
@@ -100,7 +110,10 @@ export function BannersAdminScreen({}: Props) {
     !b.governorate || b.governorate === 'all' ? 'كل المحافظات' : b.governorate;
 
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.wrap}>
+    <ScrollView
+      style={styles.root}
+      contentContainerStyle={styles.wrap}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
       <View style={styles.form}>
         <Text style={styles.formTitle}>بانر جديد للواجهة الرئيسية</Text>
         <FormField label="العنوان" value={title} onChange={setTitle} placeholder="مثال: تخفيضات الموسم" />
