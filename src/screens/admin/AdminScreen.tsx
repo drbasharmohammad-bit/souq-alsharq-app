@@ -1,0 +1,82 @@
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import React from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { PlaceholderImage } from '../../components/PlaceholderImage';
+import { useAuth } from '../../context/AuthContext';
+import { RootStackParamList } from '../../navigation/types';
+import { useRepo } from '../../repo/RepoContext';
+import { colors, fontSize, radius, spacing } from '../../theme';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'Admin'>;
+
+export function AdminScreen({ navigation }: Props) {
+  const { user } = useAuth();
+  const repo = useRepo();
+
+  if (!user?.isAdmin) {
+    return (
+      <View style={styles.root}>
+        <Text style={styles.denied}>⛔ هذه الصفحة للإدارة فقط</Text>
+      </View>
+    );
+  }
+
+  const stores = repo.getStores().length;
+  const listings = repo.getListings().length;
+  const pending = repo.getListings({ status: 'pending' }).length;
+  const subs = repo.getSubscriptions().length;
+
+  const stats = [
+    { icon: '🏪', n: stores, t: 'المتاجر' },
+    { icon: '📢', n: listings, t: 'الإعلانات' },
+    { icon: '⏳', n: pending, t: 'قيد المراجعة' },
+    { icon: '💳', n: subs, t: 'الاشتراكات' },
+  ];
+
+  return (
+    <ScrollView style={styles.root} contentContainerStyle={styles.wrap}>
+      <PlaceholderImage icon="🛡️" color={colors.primary} size={72} />
+      <Text style={styles.title}>لوحة الإدارة</Text>
+
+      <View style={styles.grid}>
+        {stats.map(s => (
+          <View key={s.t} style={styles.stat}>
+            <Text style={styles.statIcon}>{s.icon}</Text>
+            <Text style={styles.statNum}>{s.n}</Text>
+            <Text style={styles.statLabel}>{s.t}</Text>
+          </View>
+        ))}
+      </View>
+
+      <Pressable style={styles.btn} onPress={() => navigation.navigate('AdminReview')}>
+        <Text style={styles.btnText}>⏳ مراجعة الإعلانات {pending > 0 ? `(${pending})` : ''}</Text>
+      </Pressable>
+      <Pressable style={[styles.btn, styles.btnInfo]} onPress={() => navigation.navigate('AdminMedical')}>
+        <Text style={styles.btnText}>🩺 الدليل الطبي</Text>
+      </Pressable>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.background },
+  wrap: { padding: spacing.lg, alignItems: 'center' },
+  title: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text, marginTop: spacing.md },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: spacing.lg, width: '100%' },
+  stat: {
+    width: '47%',
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    margin: '1.5%',
+    alignItems: 'center',
+    elevation: 1,
+  },
+  statIcon: { fontSize: 30 },
+  statNum: { fontSize: fontSize.xxl, fontWeight: '800', color: colors.primary, marginTop: 4 },
+  statLabel: { fontSize: fontSize.sm, color: colors.textMuted, marginTop: 2 },
+  btn: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.lg, width: '100%', alignItems: 'center' },
+  btnInfo: { backgroundColor: colors.info },
+  btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
+  denied: { textAlign: 'center', marginTop: 80, fontSize: fontSize.lg, color: colors.danger, fontWeight: '700' },
+});
