@@ -2,6 +2,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { FabButton } from '../components/FabButton';
+import { AppIcon } from '../components/AppIcon';
 import { GovChips } from '../components/GovChips';
 import { ListingCard } from '../components/ListingCard';
 import { useAuth } from '../context/AuthContext';
@@ -49,7 +50,10 @@ export function ListingsScreen({ navigation, route }: Props) {
           <ListingCard item={item} onPress={() => navigation.navigate('Detail', { listingId: item.id })} />
         )}
         ListEmptyComponent={
-          <Text style={styles.empty}>لا توجد إعلانات هنا بعد — كن أول من يعلن 📢</Text>
+          <View style={styles.emptyWrap}>
+            <AppIcon name="bullhorn" size={52} color={colors.textMuted} />
+            <Text style={styles.empty}>لا توجد إعلانات هنا بعد — كن أول من يعلن</Text>
+          </View>
         }
       />
       {sectionKey !== 'medical' && <FabButton onPress={onFab} />}
@@ -60,5 +64,6 @@ export function ListingsScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   list: { paddingBottom: spacing.xl * 3 },
-  empty: { textAlign: 'center', color: colors.textMuted, fontSize: fontSize.md, marginTop: spacing.xl * 2 },
+  emptyWrap: { alignItems: 'center', marginTop: spacing.xl * 2, gap: 8 },
+  empty: { textAlign: 'center', color: colors.textMuted, fontSize: fontSize.md },
 });

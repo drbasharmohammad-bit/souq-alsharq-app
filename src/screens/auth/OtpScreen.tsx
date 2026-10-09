@@ -23,7 +23,7 @@ export function OtpScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.root}>
-      <PlaceholderImage icon="🔐" color={colors.primary} size={88} />
+      <PlaceholderImage icon="shield-key" color={colors.primary} size={88} />
       <Text style={styles.title}>رمز التحقق</Text>
       <Text style={styles.sub}>أُرسل الرمز إلى {phone}</Text>
       <View style={styles.form}>

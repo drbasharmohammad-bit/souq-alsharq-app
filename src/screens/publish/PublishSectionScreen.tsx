@@ -1,6 +1,7 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppIcon } from '../../components/AppIcon';
 import { SECTIONS, SUBCATS } from '../../data';
 import { RootStackParamList } from '../../navigation/types';
 import { colors, fontSize, radius, spacing } from '../../theme';
@@ -34,7 +35,12 @@ export function PublishSectionScreen({ navigation }: Props) {
             onPress={() => pick(item.key)}>
             <Text style={styles.icon}>{item.icon}</Text>
             <Text style={styles.name}>{item.name}</Text>
-            {item.key === 'medical' && <Text style={styles.lock}>🔒 بإشراف الإدارة</Text>}
+            {item.key === 'medical' && (
+            <View style={styles.lockRow}>
+              <AppIcon name="lock" size={13} color={colors.textMuted} />
+              <Text style={styles.lock}>بإشراف الإدارة</Text>
+            </View>
+          )}
           </Pressable>
         )}
       />
@@ -62,5 +68,6 @@ const styles = StyleSheet.create({
   tileLocked: { opacity: 0.7 },
   icon: { fontSize: 40 },
   name: { fontSize: fontSize.md, fontWeight: '700', color: colors.text, marginTop: spacing.sm },
+  lockRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   lock: { fontSize: fontSize.xs, color: colors.textMuted, marginTop: 4 },
 });

@@ -14,6 +14,8 @@ import { PhoneScreen } from '../screens/auth/PhoneScreen';
 import { DetailScreen } from '../screens/DetailScreen';
 import { ListingsScreen } from '../screens/ListingsScreen';
 import { MedicalScreen } from '../screens/MedicalScreen';
+import { AddProductScreen } from '../screens/merchant/AddProductScreen';
+import { StoreProductsScreen } from '../screens/merchant/StoreProductsScreen';
 import { MyAdsScreen } from '../screens/MyAdsScreen';
 import { PublishFormScreen } from '../screens/publish/PublishFormScreen';
 import { PublishSectionScreen } from '../screens/publish/PublishSectionScreen';
@@ -56,10 +58,13 @@ export function RootNavigator() {
               <Stack.Screen name="PublishSub" component={PublishSubScreen} options={{ title: 'التصنيف' }} />
               <Stack.Screen name="PublishForm" component={PublishFormScreen} options={{ title: 'تفاصيل الإعلان' }} />
               <Stack.Screen name="PublishSuccess" component={PublishSuccessScreen} options={{ title: 'تم الإرسال', headerLeft: () => null }} />
-              <Stack.Screen name="MyAds" component={MyAdsScreen} options={{ title: 'إعلاناتي 📋' }} />
+              <Stack.Screen name="MyAds" component={MyAdsScreen} options={{ title: 'إعلاناتي' }} />
+              {/* منتجات التاجر */}
+              <Stack.Screen name="StoreProducts" component={StoreProductsScreen} options={{ title: 'أصناف المتجر' }} />
+              <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ title: 'إضافة صنف' }} />
               {/* الاشتراك والإدارة */}
-              <Stack.Screen name="Subscription" component={SubscriptionScreen} options={{ title: 'الاشتراك 💳' }} />
-              <Stack.Screen name="Admin" component={AdminScreen} options={{ title: 'لوحة الإدارة 🛡️' }} />
+              <Stack.Screen name="Subscription" component={SubscriptionScreen} options={{ title: 'الاشتراك' }} />
+              <Stack.Screen name="Admin" component={AdminScreen} options={{ title: 'لوحة الإدارة' }} />
               <Stack.Screen name="AdminReview" component={ReviewScreen} options={{ title: 'مراجعة الإعلانات' }} />
               <Stack.Screen name="AdminMedical" component={MedicalAdminScreen} options={{ title: 'الدليل الطبي' }} />
             </Stack.Navigator>

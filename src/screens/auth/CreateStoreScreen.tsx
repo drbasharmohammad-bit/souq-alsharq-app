@@ -1,8 +1,9 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { FormField } from '../../components/FormField';
 import { SelectChips } from '../../components/SelectChips';
+import { AppIcon } from '../../components/AppIcon';
 import { useAuth } from '../../context/AuthContext';
 import { GOVS, SECTIONS } from '../../data';
 import { RootStackParamList } from '../../navigation/types';
@@ -31,7 +32,7 @@ export function CreateStoreScreen({ navigation }: Props) {
       sec,
       gov,
       area: gov,
-      icon: '🏪',
+      icon: 'store',
       g1: colors.primary,
       g2: colors.primaryLight,
     });
@@ -43,7 +44,10 @@ export function CreateStoreScreen({ navigation }: Props) {
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.wrap}>
-      <Text style={styles.title}>🏬 إنشاء متجرك</Text>
+      <View style={styles.titleRow}>
+        <AppIcon name="storefront" size={26} color={colors.text} />
+        <Text style={styles.title}>إنشاء متجرك</Text>
+      </View>
       <Text style={styles.sub}>معلومات متجرك كما ستظهر للزبائن</Text>
 
       <FormField label="اسم المتجر" value={name} onChange={setName} placeholder="مثال: مفروشات الشرق" required />
@@ -55,7 +59,10 @@ export function CreateStoreScreen({ navigation }: Props) {
       <Pressable style={styles.btn} onPress={save}>
         <Text style={styles.btnText}>إنشاء المتجر ←</Text>
       </Pressable>
-      <Text style={styles.note}>💡 الاشتراك مجاني خلال فترة الانطلاق — لاحقًا باشتراك شهري</Text>
+      <View style={styles.noteRow}>
+        <AppIcon name="lightbulb" size={16} color="#7A5A12" />
+        <Text style={styles.note}>الاشتراك مجاني خلال فترة الانطلاق — لاحقًا باشتراك شهري</Text>
+      </View>
     </ScrollView>
   );
 }
@@ -63,6 +70,8 @@ export function CreateStoreScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   wrap: { padding: spacing.lg },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  noteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
   title: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text, textAlign: 'center' },
   sub: { fontSize: fontSize.sm, color: colors.textMuted, textAlign: 'center', marginTop: 4, marginBottom: spacing.lg },
   btn: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.sm },

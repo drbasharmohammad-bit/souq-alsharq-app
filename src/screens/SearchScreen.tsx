@@ -50,7 +50,7 @@ export function SearchScreen({ navigation }: Props) {
           ListHeaderComponent={
             medResults.length > 0 ? (
               <View>
-                <Text style={styles.secTitle}>نتائج طبية 🩺</Text>
+                <Text style={styles.secTitle}>نتائج طبية</Text>
                 {medResults.map((m, i) => (
                   <View key={i} style={styles.medRow}>
                     <Text style={styles.medName}>{m.n}</Text>
@@ -64,7 +64,7 @@ export function SearchScreen({ navigation }: Props) {
           renderItem={({ item }) => (
             <ListingCard item={item} onPress={() => navigation.navigate('Detail', { listingId: item.id })} />
           )}
-          ListEmptyComponent={<Text style={styles.empty}>لا نتائج مطابقة 🔍</Text>}
+          ListEmptyComponent={<Text style={styles.empty}>لا نتائج مطابقة</Text>}
         />
       ) : (
         <Text style={styles.hint}>اكتب كلمتين على الأقل للبحث في الإعلانات والدليل الطبي</Text>

@@ -3,6 +3,7 @@ import { CompositeScreenProps } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useMemo } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { AppIcon } from '../components/AppIcon';
 import { ListingCard } from '../components/ListingCard';
 import { useFavorites } from '../context/FavoritesContext';
 import { RootStackParamList, TabsParamList } from '../navigation/types';
@@ -35,9 +36,9 @@ export function FavoritesScreen({ navigation }: Props) {
         )}
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
-            <Text style={styles.emptyIcon}>🤍</Text>
+            <AppIcon name="heart-outline" size={64} color={colors.textMuted} />
             <Text style={styles.empty}>لا توجد عناصر في المفضلة بعد</Text>
-            <Text style={styles.emptySub}>اضغط على القلب 🤍 في أي إعلان لحفظه هنا</Text>
+            <Text style={styles.emptySub}>اضغط على القلب في أي إعلان لحفظه هنا</Text>
           </View>
         }
       />

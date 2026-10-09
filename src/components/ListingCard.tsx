@@ -4,6 +4,7 @@ import { useFavorites } from '../context/FavoritesContext';
 import { formatPrice } from '../data';
 import { colors, fontSize, radius, spacing } from '../theme';
 import { Listing } from '../types';
+import { AppIcon } from './AppIcon';
 import { PlaceholderImage } from './PlaceholderImage';
 
 function ListingCardRaw({ item, onPress }: { item: Listing; onPress: () => void }) {
@@ -16,16 +17,22 @@ function ListingCardRaw({ item, onPress }: { item: Listing; onPress: () => void 
         <View style={styles.row}>
           <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
           <Pressable onPress={() => toggle(item.id)} hitSlop={8}>
-            <Text style={styles.heart}>{fav ? '❤️' : '🤍'}</Text>
+            <AppIcon name={fav ? 'heart' : 'heart-outline'} size={22} color={fav ? colors.danger : colors.textMuted} />
           </Pressable>
         </View>
         <Text style={styles.price}>{formatPrice(item.price, item.priceNote)}</Text>
-        <Text style={styles.meta} numberOfLines={1}>
-          📍 {item.gov} - {item.area}
-        </Text>
+        <View style={styles.metaRow}>
+          <AppIcon name="map-marker" size={14} color={colors.textMuted} />
+          <Text style={styles.meta} numberOfLines={1}>{item.gov} - {item.area}</Text>
+        </View>
         <View style={[styles.badge, item.sellerType === 'store' ? styles.badgeStore : styles.badgeInd]}>
+          <AppIcon
+            name={item.sellerType === 'store' ? 'check-circle' : 'account'}
+            size={13}
+            color={item.sellerType === 'store' ? colors.verifiedText : colors.individualText}
+          />
           <Text style={[styles.badgeText, item.sellerType === 'store' ? styles.badgeStoreText : styles.badgeIndText]}>
-            {item.sellerType === 'store' ? 'متجر موثق ✅' : 'إعلان فردي 👤'}
+            {item.sellerType === 'store' ? 'متجر موثق' : 'إعلان فردي'}
           </Text>
         </View>
       </View>
@@ -49,10 +56,10 @@ const styles = StyleSheet.create({
   body: { flex: 1, marginStart: spacing.md },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   name: { fontSize: fontSize.md, fontWeight: '700', color: colors.text, flex: 1 },
-  heart: { fontSize: 20 },
   price: { fontSize: fontSize.md, fontWeight: '700', color: colors.primary, marginTop: 2 },
-  meta: { fontSize: fontSize.sm, color: colors.textMuted, marginTop: 2 },
-  badge: { alignSelf: 'flex-start', borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 2, marginTop: 6 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  meta: { fontSize: fontSize.sm, color: colors.textMuted, flex: 1 },
+  badge: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 2, marginTop: 6 },
   badgeStore: { backgroundColor: colors.verifiedBg },
   badgeInd: { backgroundColor: colors.individualBg },
   badgeText: { fontSize: fontSize.xs, fontWeight: '600' },

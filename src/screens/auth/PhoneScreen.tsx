@@ -22,7 +22,7 @@ export function PhoneScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
-      <PlaceholderImage icon="📱" color={colors.primary} size={88} />
+      <PlaceholderImage icon="cellphone" color={colors.primary} size={88} />
       <Text style={styles.title}>تسجيل الدخول</Text>
       <Text style={styles.sub}>أدخل رقم هاتفك وسنرسل لك رمز تحقق</Text>
       <View style={styles.form}>

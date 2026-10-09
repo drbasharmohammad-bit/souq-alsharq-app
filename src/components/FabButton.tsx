@@ -1,11 +1,13 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { colors, fontSize, radius, spacing } from '../theme';
+import { AppIcon } from './AppIcon';
 
-export function FabButton({ onPress }: { onPress: () => void }) {
+export function FabButton({ onPress, label = 'أضف إعلان' }: { onPress: () => void; label?: string }) {
   return (
     <Pressable style={styles.fab} onPress={onPress}>
-      <Text style={styles.text}>＋ أضف إعلان</Text>
+      <AppIcon name="plus" size={18} color="#1A1A1A" />
+      <Text style={styles.text}>{label}</Text>
     </Pressable>
   );
 }
@@ -15,6 +17,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: spacing.xl,
     alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: colors.gold,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.xl,

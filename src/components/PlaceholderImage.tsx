@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { StyleSheet, View, ViewStyle } from 'react-native';
+import { AppIcon } from './AppIcon';
 
 // صورة بديلة ملونة (placeholder) — تُستبدل بصور حقيقية لاحقًا
 export function PlaceholderImage({
@@ -15,7 +16,7 @@ export function PlaceholderImage({
 }) {
   return (
     <View style={[styles.box, { backgroundColor: color + '22', width: size, height: size, borderRadius: size / 5 }, style]}>
-      <Text style={{ fontSize: size * 0.45 }}>{icon}</Text>
+      <AppIcon name={icon} size={size * 0.45} color={color} />
     </View>
   );
 }

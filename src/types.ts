@@ -55,6 +55,17 @@ export interface Listing {
   userId?: string;
   createdAt: number;
   specs?: Spec[];
+  images?: string[];
+}
+
+export interface Product {
+  id: string;
+  storeId: string;
+  name: string;
+  price: number | null;
+  description: string;
+  images: string[];
+  createdAt: number;
 }
 
 export interface User {

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppIcon } from '../../components/AppIcon';
 import { ListingCard } from '../../components/ListingCard';
 import { useAuth } from '../../context/AuthContext';
 import { useRepo } from '../../repo/RepoContext';
@@ -23,17 +24,20 @@ export function ReviewScreen() {
   if (!user?.isAdmin) {
     return (
       <View style={styles.root}>
-        <Text style={styles.denied}>⛔ هذه الصفحة للإدارة فقط</Text>
+        <View style={styles.deniedWrap}>
+          <AppIcon name="shield-alert" size={52} color={colors.danger} />
+          <Text style={styles.denied}>هذه الصفحة للإدارة فقط</Text>
+        </View>
       </View>
     );
   }
 
   const decide = (id: string, status: AdStatus) => repo.updateListingStatus(id, status);
 
-  const tabs: { k: Filter; t: string }[] = [
+  const tabs: { k: Filter; t: string; icon?: string }[] = [
     { k: 'all', t: 'الكل' },
-    { k: 'store', t: '🏬 تجار' },
-    { k: 'individual', t: '👤 أفراد' },
+    { k: 'store', t: 'تجار', icon: 'storefront' },
+    { k: 'individual', t: 'أفراد', icon: 'account' },
   ];
 
   return (
@@ -44,7 +48,10 @@ export function ReviewScreen() {
             key={t.k}
             onPress={() => setFilter(t.k)}
             style={[styles.tab, filter === t.k && styles.tabActive]}>
-            <Text style={[styles.tabText, filter === t.k && styles.tabTextActive]}>{t.t}</Text>
+            <View style={styles.tabRow}>
+              {t.icon && <AppIcon name={t.icon} size={15} color={filter === t.k ? colors.white : colors.text} />}
+              <Text style={[styles.tabText, filter === t.k && styles.tabTextActive]}>{t.t}</Text>
+            </View>
           </Pressable>
         ))}
       </View>
@@ -56,20 +63,34 @@ export function ReviewScreen() {
         renderItem={({ item }) => (
           <View style={styles.card}>
             <ListingCard item={item} onPress={() => {}} />
-            <Text style={styles.meta}>
-              {item.sellerType === 'store' ? '🏬 تاجر' : '👤 فرد'} • {item.seller} • 📞 {item.phone ?? '—'}
-            </Text>
+            <View style={styles.metaRow}>
+              <AppIcon name={item.sellerType === 'store' ? 'storefront' : 'account'} size={14} color={colors.textMuted} />
+              <Text style={styles.meta}>{item.sellerType === 'store' ? 'تاجر' : 'فرد'} • {item.seller}</Text>
+              <AppIcon name="phone" size={14} color={colors.textMuted} />
+              <Text style={styles.meta}>{item.phone ?? '—'}</Text>
+            </View>
             <View style={styles.row}>
               <Pressable style={[styles.btn, styles.ok]} onPress={() => decide(item.id, 'approved')}>
-                <Text style={styles.btnText}>✅ قبول</Text>
+                <View style={styles.btnRow}>
+                  <AppIcon name="check" size={18} color={colors.white} />
+                  <Text style={styles.btnText}>قبول</Text>
+                </View>
               </Pressable>
               <Pressable style={[styles.btn, styles.no]} onPress={() => decide(item.id, 'rejected')}>
-                <Text style={styles.btnText}>❌ رفض</Text>
+                <View style={styles.btnRow}>
+                  <AppIcon name="close" size={18} color={colors.white} />
+                  <Text style={styles.btnText}>رفض</Text>
+                </View>
               </Pressable>
             </View>
           </View>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>لا توجد إعلانات بانتظار المراجعة 🎉</Text>}
+        ListEmptyComponent={
+          <View style={styles.emptyWrap}>
+            <AppIcon name="party-popper" size={52} color={colors.textMuted} />
+            <Text style={styles.empty}>لا توجد إعلانات بانتظار المراجعة</Text>
+          </View>
+        }
       />
     </View>
   );
@@ -84,12 +105,17 @@ const styles = StyleSheet.create({
   tabTextActive: { color: colors.white, fontWeight: '800' },
   list: { paddingBottom: spacing.xl },
   card: { backgroundColor: colors.card, borderRadius: radius.md, marginHorizontal: spacing.md, marginBottom: spacing.md, paddingBottom: spacing.md, elevation: 1 },
-  meta: { fontSize: fontSize.sm, color: colors.textMuted, marginHorizontal: spacing.md, marginTop: spacing.sm },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginHorizontal: spacing.md, marginTop: spacing.sm },
+  meta: { fontSize: fontSize.sm, color: colors.textMuted },
   row: { flexDirection: 'row', gap: spacing.md, marginHorizontal: spacing.md, marginTop: spacing.sm },
   btn: { flex: 1, borderRadius: radius.md, padding: spacing.md, alignItems: 'center' },
   ok: { backgroundColor: colors.primary },
   no: { backgroundColor: colors.danger },
   btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
-  empty: { textAlign: 'center', color: colors.textMuted, fontSize: fontSize.md, marginTop: spacing.xl * 2 },
-  denied: { textAlign: 'center', marginTop: 80, fontSize: fontSize.lg, color: colors.danger, fontWeight: '700' },
+  emptyWrap: { alignItems: 'center', marginTop: spacing.xl * 2, gap: 8 },
+  empty: { textAlign: 'center', color: colors.textMuted, fontSize: fontSize.md },
+  deniedWrap: { alignItems: 'center', marginTop: 80, gap: 8 },
+  denied: { textAlign: 'center', fontSize: fontSize.lg, color: colors.danger, fontWeight: '700' },
+  tabRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  btnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });

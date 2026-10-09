@@ -1,6 +1,7 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppIcon } from '../../components/AppIcon';
 import { useAuth } from '../../context/AuthContext';
 import { useRepo } from '../../repo/RepoContext';
 import { RootStackParamList } from '../../navigation/types';
@@ -20,7 +21,7 @@ export function AccountTypeScreen({ navigation, route }: Props) {
       if (existing && existing.accountType !== type) {
         Alert.alert(
           'تنبيه',
-          `هذا الرقم مسجل كـ${existing.accountType === 'merchant' ? 'تاجر 🏬' : 'فرد 👤'} — سيتم الدخول بنفس النوع`,
+          `هذا الرقم مسجل كـ${existing.accountType === 'merchant' ? 'تاجر' : 'فرد'} — سيتم الدخول بنفس النوع`,
         );
       }
       const user = await login(phone, existing ? existing.accountType : type);
@@ -40,14 +41,14 @@ export function AccountTypeScreen({ navigation, route }: Props) {
       <Text style={styles.sub}>اختر نوع الحساب المناسب لك</Text>
 
       <Pressable style={styles.card} onPress={() => choose('merchant')}>
-        <Text style={styles.icon}>🏬</Text>
+        <AppIcon name="storefront" size={52} color={colors.primary} />
         <Text style={styles.cardTitle}>حساب تاجر</Text>
         <Text style={styles.cardDesc}>أنشئ متجرك الخاص واعرض منتجاتك لآلاف الزبائن — باشتراك شهري</Text>
         <Text style={styles.cardGo}>اختيار ←</Text>
       </Pressable>
 
       <Pressable style={styles.card} onPress={() => choose('individual')}>
-        <Text style={styles.icon}>👤</Text>
+        <AppIcon name="account" size={52} color={colors.primary} />
         <Text style={styles.cardTitle}>حساب فرد</Text>
         <Text style={styles.cardDesc}>انشر إعلاناتك مباشرة: سيارتك، شقتك، خدماتك — مجانًا</Text>
         <Text style={styles.cardGo}>اختيار ←</Text>
@@ -70,7 +71,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  icon: { fontSize: 48 },
   cardTitle: { fontSize: fontSize.lg, fontWeight: '800', color: colors.text, marginTop: spacing.sm },
   cardDesc: { fontSize: fontSize.sm, color: colors.textMuted, textAlign: 'center', marginTop: spacing.sm, lineHeight: 22 },
   cardGo: { fontSize: fontSize.md, fontWeight: '800', color: colors.primary, marginTop: spacing.md },

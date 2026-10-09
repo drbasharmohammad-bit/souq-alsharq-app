@@ -3,6 +3,7 @@ import { CompositeScreenProps } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppIcon } from '../components/AppIcon';
 import { GovChips } from '../components/GovChips';
 import { ListingCard } from '../components/ListingCard';
 import { PlaceholderImage } from '../components/PlaceholderImage';
@@ -17,9 +18,9 @@ type Props = CompositeScreenProps<
 >;
 
 const BANNERS = [
-  { id: 'b1', title: 'سوق الشرق', sub: 'كل إعلانات الجزيرة والفرات بمكان واحد', c: '#0E6B4A', icon: '🏪' },
-  { id: 'b2', title: 'أضف إعلانك مجانًا', sub: 'بيع واشترِ بسهولة في محافظتك', c: '#7A4A1F', icon: '📢' },
-  { id: 'b3', title: 'دليل طبي موثق ✅', sub: 'أطباء وصيدليات ببيانات مؤكدة من الإدارة', c: '#1E6FA3', icon: '🩺' },
+  { id: 'b1', title: 'سوق الشرق', sub: 'كل إعلانات الجزيرة والفرات بمكان واحد', c: '#0E6B4A', icon: 'store' },
+  { id: 'b2', title: 'أضف إعلانك مجانًا', sub: 'بيع واشترِ بسهولة في محافظتك', c: '#7A4A1F', icon: 'bullhorn' },
+  { id: 'b3', title: 'دليل طبي موثق', sub: 'أطباء وصيدليات ببيانات مؤكدة من الإدارة', c: '#1E6FA3', icon: 'stethoscope' },
 ];
 
 export function HomeScreen({ navigation }: Props) {
@@ -41,10 +42,16 @@ export function HomeScreen({ navigation }: Props) {
     <ScrollView style={styles.root} showsVerticalScrollIndicator={false}>
       {/* الهيدر */}
       <View style={styles.header}>
-        <Text style={styles.logo}>سوق الشرق 🏪</Text>
+        <View style={styles.logoRow}>
+          <AppIcon name="store" size={30} color={colors.white} />
+          <Text style={styles.logo}>سوق الشرق</Text>
+        </View>
         <Text style={styles.tagline}>إعلانات الجزيرة والفرات</Text>
         <Pressable style={styles.searchBox} onPress={() => navigation.navigate('Search')}>
-          <Text style={styles.searchHint}>🔍 ابحث عن سيارة، شقة، طبيب...</Text>
+          <View style={styles.searchRow}>
+            <AppIcon name="magnify" size={18} color={colors.textMuted} />
+            <Text style={styles.searchHint}>ابحث عن سيارة، شقة، طبيب...</Text>
+          </View>
         </Pressable>
       </View>
 
@@ -54,7 +61,7 @@ export function HomeScreen({ navigation }: Props) {
       <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.bannerWrap}>
         {BANNERS.map(b => (
           <View key={b.id} style={[styles.banner, { backgroundColor: b.c }]}>
-            <Text style={styles.bannerIcon}>{b.icon}</Text>
+            <AppIcon name={b.icon} size={38} color={colors.white} />
             <Text style={styles.bannerTitle}>{b.title}</Text>
             <Text style={styles.bannerSub}>{b.sub}</Text>
           </View>
@@ -62,12 +69,12 @@ export function HomeScreen({ navigation }: Props) {
       </ScrollView>
 
       {/* شبكة الأقسام */}
-      <Text style={styles.secTitle}>الأقسام</Text>
+      <Text style={styles.secTitlePlain}>الأقسام</Text>
       <View style={styles.grid}>
         {SECTIONS.map(s => (
           <Pressable key={s.key} style={styles.tile} onPress={() => goSection(s.key)}>
             <View style={[styles.tileIcon, { backgroundColor: s.g1 + '1A' }]}>
-              <Text style={styles.tileEmoji}>{s.icon}</Text>
+              <AppIcon name={s.icon} size={26} color={s.g1} />
             </View>
             <Text style={styles.tileName}>{s.name}</Text>
           </Pressable>
@@ -75,7 +82,10 @@ export function HomeScreen({ navigation }: Props) {
       </View>
 
       {/* متاجر مميزة */}
-      <Text style={styles.secTitle}>متاجر مميزة ⭐</Text>
+      <View style={styles.secTitleRow}>
+        <AppIcon name="star" size={20} color={colors.gold} />
+        <Text style={styles.secTitle}>متاجر مميزة</Text>
+      </View>
       <FlatList
         horizontal
         data={stores}
@@ -88,13 +98,19 @@ export function HomeScreen({ navigation }: Props) {
           <View style={styles.storeCard}>
             <PlaceholderImage icon={item.icon} color={item.g1} size={56} />
             <Text style={styles.storeName} numberOfLines={1}>{item.name}</Text>
-            <Text style={styles.storeMeta} numberOfLines={1}>📍 {item.gov}</Text>
+            <View style={styles.storeMetaRow}>
+              <AppIcon name="map-marker" size={12} color={colors.textMuted} />
+              <Text style={styles.storeMeta} numberOfLines={1}>{item.gov}</Text>
+            </View>
           </View>
         )}
       />
 
       {/* منتجات مميزة */}
-      <Text style={styles.secTitle}>إعلانات مميزة ✨</Text>
+      <View style={styles.secTitleRow}>
+        <AppIcon name="sparkles" size={20} color={colors.gold} />
+        <Text style={styles.secTitle}>إعلانات مميزة</Text>
+      </View>
       <FlatList
         data={featured}
         keyExtractor={l => l.id}
@@ -114,6 +130,7 @@ export function HomeScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   header: { backgroundColor: colors.primary, padding: spacing.lg, paddingBottom: spacing.md },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logo: { fontSize: fontSize.xxl, fontWeight: '800', color: colors.white },
   tagline: { fontSize: fontSize.sm, color: colors.goldLight, marginTop: 2 },
   searchBox: {
@@ -122,7 +139,8 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginTop: spacing.md,
   },
-  searchHint: { color: colors.textMuted, fontSize: fontSize.sm },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  searchHint: { color: colors.textMuted, fontSize: fontSize.sm, flex: 1 },
   hidden: { display: 'none' },
   bannerWrap: { marginTop: spacing.md },
   banner: {
@@ -131,10 +149,11 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginStart: spacing.md,
   },
-  bannerIcon: { fontSize: 36 },
   bannerTitle: { fontSize: fontSize.xl, fontWeight: '800', color: colors.white, marginTop: spacing.sm },
   bannerSub: { fontSize: fontSize.sm, color: colors.white, opacity: 0.9, marginTop: 4 },
-  secTitle: { fontSize: fontSize.lg, fontWeight: '800', color: colors.text, margin: spacing.md, marginBottom: spacing.sm },
+  secTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, margin: spacing.md, marginBottom: spacing.sm },
+  secTitle: { fontSize: fontSize.lg, fontWeight: '800', color: colors.text },
+  secTitlePlain: { fontSize: fontSize.lg, fontWeight: '800', color: colors.text, margin: spacing.md, marginBottom: spacing.sm },
   grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.sm },
   tile: {
     width: '31%',
@@ -146,7 +165,6 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   tileIcon: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
-  tileEmoji: { fontSize: 26 },
   tileName: { fontSize: fontSize.xs, fontWeight: '700', color: colors.text, marginTop: 6, textAlign: 'center' },
   hList: { paddingHorizontal: spacing.md, gap: spacing.md },
   storeCard: {
@@ -158,5 +176,6 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   storeName: { fontSize: fontSize.sm, fontWeight: '700', color: colors.text, marginTop: 6 },
-  storeMeta: { fontSize: fontSize.xs, color: colors.textMuted },
+  storeMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  storeMeta: { fontSize: fontSize.xs, color: colors.textMuted, flex: 1 },
 });

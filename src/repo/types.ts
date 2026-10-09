@@ -5,6 +5,7 @@ import {
   Lab,
   Listing,
   Pharmacy,
+  Product,
   SectionKey,
   Store,
   Subscription,
@@ -16,6 +17,7 @@ export type NewListingInput = Omit<Listing, 'id' | 'status' | 'createdAt'>;
 export type NewStoreInput = Omit<Store, 'id'>;
 export type NewUserInput = Omit<User, 'id' | 'createdAt' | 'isAdmin'>;
 export type NewSubscriptionInput = Omit<Subscription, 'id' | 'createdAt'>;
+export type NewProductInput = Omit<Product, 'id' | 'createdAt'>;
 
 export type DoctorEntry = Doctor & { id: string };
 export type PharmacyEntry = Pharmacy & { id: string };
@@ -68,4 +70,9 @@ export interface Repository {
   addSubscription(s: NewSubscriptionInput): Subscription;
   updateSubscriptionStatus(id: string, status: Subscription['status']): void;
   getUserSubscription(userId: string): Subscription | undefined;
+
+  // منتجات المتاجر
+  getProductsByStore(storeId: string): Product[];
+  addProduct(input: NewProductInput): Product;
+  deleteProduct(id: string): void;
 }

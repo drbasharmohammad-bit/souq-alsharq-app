@@ -1,7 +1,9 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppIcon } from '../../components/AppIcon';
 import { FormField } from '../../components/FormField';
+import { ImagePickerField } from '../../components/ImagePickerField';
 import { SelectChips } from '../../components/SelectChips';
 import { useAuth } from '../../context/AuthContext';
 import { GOVS, SUBCATS, sectionName } from '../../data';
@@ -34,6 +36,7 @@ export function PublishFormScreen({ navigation, route }: Props) {
   });
   const set = (k: string, v: string) => setF(prev => ({ ...prev, [k]: v }));
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [images, setImages] = useState<string[]>([]);
 
   const isCars = sectionKey === 'cars';
   const isEstate = sectionKey === 'estate';
@@ -109,6 +112,7 @@ export function PublishFormScreen({ navigation, route }: Props) {
       advertiserName: isEstate ? f.fullName.trim() : undefined,
       userId: user.id,
       specs: specs.length ? specs : undefined,
+      images: images.length > 0 ? images : undefined,
     });
 
     navigation.replace('PublishSuccess');
@@ -135,9 +139,12 @@ export function PublishFormScreen({ navigation, route }: Props) {
       {isEstate && (
         <>
           <View style={styles.warn}>
-            <Text style={styles.warnText}>
-              ⚠️ تنبيه: إدارة التطبيق وسيط إعلاني فقط وغير مسؤولة عن أي تعامل أو اتفاق بين الأطراف — تحقق بنفسك قبل أي دفع.
-            </Text>
+            <View style={styles.warnRow}>
+              <AppIcon name="alert" size={18} color="#7A5A12" />
+              <Text style={styles.warnText}>
+                تنبيه: إدارة التطبيق وسيط إعلاني فقط وغير مسؤولة عن أي تعامل أو اتفاق بين الأطراف — تحقق بنفسك قبل أي دفع.
+              </Text>
+            </View>
           </View>
           <FormField label="المساحة (م²)" value={f.space ?? ''} onChange={v => set('space', v)} placeholder="مثال: 130" keyboardType="numeric" required error={errors.space} />
           <FormField label="عدد الغرف" value={f.rooms ?? ''} onChange={v => set('rooms', v)} placeholder="مثال: 3" keyboardType="numeric" />
@@ -159,6 +166,10 @@ export function PublishFormScreen({ navigation, route }: Props) {
       )}
       <FormField label="الوصف" value={f.desc ?? ''} onChange={v => set('desc', v)} placeholder="اكتب تفاصيل الإعلان..." multiline />
 
+      {(isCars || isEstate) && (
+        <ImagePickerField images={images} onChange={setImages} max={6} label="صور الإعلان" />
+      )}
+
       <Pressable style={styles.btn} onPress={submit}>
         <Text style={styles.btnText}>إرسال للمراجعة ←</Text>
       </Pressable>
@@ -171,7 +182,8 @@ const styles = StyleSheet.create({
   wrap: { padding: spacing.lg },
   title: { fontSize: fontSize.lg, fontWeight: '800', color: colors.text, marginBottom: spacing.lg, textAlign: 'center' },
   warn: { backgroundColor: '#FFF8E6', borderWidth: 1, borderColor: colors.gold, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md },
-  warnText: { fontSize: fontSize.sm, color: '#7A5A12', lineHeight: 22 },
+  warnRow: { flexDirection: 'row', gap: 8 },
+  warnText: { flex: 1, fontSize: fontSize.sm, color: '#7A5A12', lineHeight: 22 },
   btn: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.sm },
   btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
 });

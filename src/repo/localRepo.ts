@@ -12,6 +12,7 @@ import {
   Lab,
   Listing,
   Pharmacy,
+  Product,
   Store,
   Subscription,
   User,
@@ -21,6 +22,7 @@ import {
   LabEntry,
   ListingFilter,
   NewListingInput,
+  NewProductInput,
   NewStoreInput,
   NewSubscriptionInput,
   NewUserInput,
@@ -41,6 +43,7 @@ export class LocalRepo implements Repository {
   private pharmacies: PharmacyEntry[];
   private labs: LabEntry[];
   private subscriptions: Subscription[] = [];
+  private products: Product[] = [];
 
   private listeners = new Set<() => void>();
   subscribe(fn: () => void): () => void {
@@ -237,5 +240,28 @@ export class LocalRepo implements Repository {
   }
   getUserSubscription(userId: string): Subscription | undefined {
     return this.subscriptions.find(s => s.userId === userId);
+  }
+
+  // ——— منتجات المتاجر ———
+  getProductsByStore(storeId: string): Product[] {
+    return this.products
+      .filter(p => p.storeId === storeId)
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  addProduct(input: NewProductInput): Product {
+    const product: Product = {
+      ...input,
+      id: nid('prod'),
+      createdAt: Date.now(),
+    };
+    this.products.unshift(product);
+    this.emit();
+    return product;
+  }
+
+  deleteProduct(id: string): void {
+    this.products = this.products.filter(p => p.id !== id);
+    this.emit();
   }
 }

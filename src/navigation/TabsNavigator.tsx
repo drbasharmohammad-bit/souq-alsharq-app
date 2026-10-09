@@ -1,6 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
-import { Text } from 'react-native';
+import { AppIcon } from '../components/AppIcon';
 import { AccountScreen } from '../screens/AccountScreen';
 import { FavoritesScreen } from '../screens/FavoritesScreen';
 import { HomeScreen } from '../screens/HomeScreen';
@@ -11,10 +11,10 @@ import { TabsParamList } from './types';
 const Tab = createBottomTabNavigator<TabsParamList>();
 
 const ICONS: Record<string, string> = {
-  Home: '🏠',
-  Sections: '🗂️',
-  Favorites: '❤️',
-  Account: '👤',
+  Home: 'home',
+  Sections: 'view-grid',
+  Favorites: 'heart',
+  Account: 'account',
 };
 
 const LABELS: Record<string, string> = {
@@ -32,8 +32,8 @@ export function TabsNavigator() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarLabel: LABELS[route.name],
-        tabBarIcon: ({ focused }) => (
-          <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.6 }}>{ICONS[route.name]}</Text>
+        tabBarIcon: ({ focused, color }) => (
+          <AppIcon name={ICONS[route.name]} size={24} color={focused ? colors.primary : color} />
         ),
       })}>
       <Tab.Screen name="Home" component={HomeScreen} />

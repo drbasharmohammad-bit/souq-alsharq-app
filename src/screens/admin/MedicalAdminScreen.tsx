@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppIcon } from '../../components/AppIcon';
 import { FormField } from '../../components/FormField';
 import { SelectChips } from '../../components/SelectChips';
 import { useAuth } from '../../context/AuthContext';
@@ -39,7 +40,10 @@ export function MedicalAdminScreen() {
   if (!user?.isAdmin) {
     return (
       <View style={styles.root}>
-        <Text style={styles.denied}>⛔ هذه الصفحة للإدارة فقط</Text>
+        <View style={styles.deniedWrap}>
+          <AppIcon name="shield-alert" size={52} color={colors.danger} />
+          <Text style={styles.denied}>هذه الصفحة للإدارة فقط</Text>
+        </View>
       </View>
     );
   }
@@ -55,11 +59,11 @@ export function MedicalAdminScreen() {
       return;
     }
     if (tab === 'doctors') {
-      const d: Doctor = { name: form.name.trim(), spec: form.spec, gov: form.gov, area: form.area.trim() || form.gov, phone: form.phone.trim(), days: form.days.trim() || 'يوميًا', icon: '👨‍⚕️' };
+      const d: Doctor = { name: form.name.trim(), spec: form.spec, gov: form.gov, area: form.area.trim() || form.gov, phone: form.phone.trim(), days: form.days.trim() || 'يوميًا', icon: 'doctor' };
       if (editingId) repo.updateDoctor(editingId, d);
       else repo.addDoctor(d);
     } else if (tab === 'pharms') {
-      const p: Pharmacy = { name: form.name.trim(), gov: form.gov, area: form.area.trim() || form.gov, phone: form.phone.trim(), hours: (form.hours.trim() || '8 صباحًا - 11 ليلًا') + (form.night ? ' 🌙 مناوبة' : '') };
+      const p: Pharmacy = { name: form.name.trim(), gov: form.gov, area: form.area.trim() || form.gov, phone: form.phone.trim(), hours: (form.hours.trim() || '8 صباحًا - 11 ليلًا') + (form.night ? ' (مناوبة ليلية)' : '') };
       if (editingId) repo.updatePharmacy(editingId, p);
       else repo.addPharmacy(p);
     } else {
@@ -107,10 +111,10 @@ export function MedicalAdminScreen() {
     ]);
   };
 
-  const tabs: { k: Tab; t: string }[] = [
-    { k: 'doctors', t: '👨‍⚕️ أطباء' },
-    { k: 'pharms', t: '💊 صيدليات' },
-    { k: 'labs', t: '🧪 مخابر' },
+  const tabs: { k: Tab; t: string; icon: string }[] = [
+    { k: 'doctors', t: 'أطباء', icon: 'doctor' },
+    { k: 'pharms', t: 'صيدليات', icon: 'pill' },
+    { k: 'labs', t: 'مخابر', icon: 'test-tube' },
   ];
 
   const renderRow = (id: string, title: string, meta: string) => (
@@ -120,10 +124,10 @@ export function MedicalAdminScreen() {
         <Text style={styles.rowMeta}>{meta}</Text>
       </View>
       <Pressable style={styles.mini} onPress={() => edit(id)}>
-        <Text style={styles.miniText}>✏️</Text>
+        <AppIcon name="pencil" size={18} color={colors.primary} />
       </Pressable>
       <Pressable style={[styles.mini, styles.miniDel]} onPress={() => remove(id, title)}>
-        <Text style={styles.miniText}>🗑️</Text>
+        <AppIcon name="delete" size={18} color={colors.danger} />
       </Pressable>
     </View>
   );
@@ -133,14 +137,20 @@ export function MedicalAdminScreen() {
       <View style={styles.tabs}>
         {tabs.map(t => (
           <Pressable key={t.k} onPress={() => { setTab(t.k); reset(); }} style={[styles.tab, tab === t.k && styles.tabActive]}>
-            <Text style={[styles.tabText, tab === t.k && styles.tabTextActive]}>{t.t}</Text>
+            <View style={styles.tabRow}>
+              <AppIcon name={t.icon} size={15} color={tab === t.k ? colors.white : colors.text} />
+              <Text style={[styles.tabText, tab === t.k && styles.tabTextActive]}>{t.t}</Text>
+            </View>
           </Pressable>
         ))}
       </View>
 
       {/* نموذج الإضافة/التعديل */}
       <View style={styles.form}>
-        <Text style={styles.formTitle}>{editingId ? '✏️ تعديل' : '➕ إضافة جديد'}</Text>
+        <View style={styles.formTitleRow}>
+          <AppIcon name={editingId ? 'pencil' : 'plus'} size={18} color={colors.text} />
+          <Text style={styles.formTitle}>{editingId ? 'تعديل' : 'إضافة جديد'}</Text>
+        </View>
         <FormField label={tab === 'doctors' ? 'اسم الطبيب' : tab === 'pharms' ? 'اسم الصيدلية' : 'اسم المخبر'} value={form.name} onChange={v => set('name', v)} required />
         {tab === 'doctors' && (
           <SelectChips label="الاختصاص" options={SPECS} value={form.spec} onChange={v => set('spec', v)} />
@@ -155,7 +165,10 @@ export function MedicalAdminScreen() {
         )}
         {tab === 'pharms' && (
           <Pressable style={styles.check} onPress={() => set('night', !form.night)}>
-            <Text style={styles.checkText}>{form.night ? '☑️' : '⬜️'} مناوبة ليلية 🌙</Text>
+            <View style={styles.checkRow}>
+              <AppIcon name={form.night ? 'checkbox-marked' : 'checkbox-blank-outline'} size={22} color={colors.primary} />
+              <Text style={styles.checkText}>مناوبة ليلية</Text>
+            </View>
           </Pressable>
         )}
         {tab === 'labs' && (
@@ -177,15 +190,15 @@ export function MedicalAdminScreen() {
       <Text style={styles.listTitle}>القائمة الحالية</Text>
       {tab === 'doctors' &&
         (repo.getDoctors() as DoctorEntry[]).map(d =>
-          renderRow(d.id, `${d.name} — ${d.spec}`, `📍 ${d.gov} - ${d.area} • 📞 ${d.phone}`),
+          renderRow(d.id, `${d.name} — ${d.spec}`, `${d.gov} - ${d.area} • ${d.phone}`),
         )}
       {tab === 'pharms' &&
         (repo.getPharmacies() as PharmacyEntry[]).map(p =>
-          renderRow(p.id, p.name, `📍 ${p.gov} - ${p.area} • 🕐 ${p.hours} • 📞 ${p.phone}`),
+          renderRow(p.id, p.name, `${p.gov} - ${p.area} • ${p.hours} • ${p.phone}`),
         )}
       {tab === 'labs' &&
         (repo.getLabs() as LabEntry[]).map(l =>
-          renderRow(l.id, l.name, `📍 ${l.gov} - ${l.area} • 🕐 ${l.hours} • 📞 ${l.phone}`),
+          renderRow(l.id, l.name, `${l.gov} - ${l.area} • ${l.hours} • ${l.phone}`),
         )}
     </ScrollView>
   );
@@ -200,7 +213,7 @@ const styles = StyleSheet.create({
   tabText: { fontSize: fontSize.sm, color: colors.text, fontWeight: '600' },
   tabTextActive: { color: colors.white, fontWeight: '800' },
   form: { backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.md, elevation: 1 },
-  formTitle: { fontSize: fontSize.md, fontWeight: '800', color: colors.text, marginBottom: spacing.md },
+  formTitle: { fontSize: fontSize.md, fontWeight: '800', color: colors.text },
   check: { marginBottom: spacing.md },
   checkText: { fontSize: fontSize.md, color: colors.text },
   formRow: { flexDirection: 'row', gap: spacing.md },
@@ -216,6 +229,9 @@ const styles = StyleSheet.create({
   rowMeta: { fontSize: fontSize.xs, color: colors.textMuted, marginTop: 2 },
   mini: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', marginStart: spacing.sm },
   miniDel: { backgroundColor: '#FBE9E7' },
-  miniText: { fontSize: 18 },
-  denied: { textAlign: 'center', marginTop: 80, fontSize: fontSize.lg, color: colors.danger, fontWeight: '700' },
+  deniedWrap: { alignItems: 'center', marginTop: 80, gap: 8 },
+  denied: { textAlign: 'center', fontSize: fontSize.lg, color: colors.danger, fontWeight: '700' },
+  tabRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  formTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: spacing.md },
+  checkRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 });

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppIcon } from '../components/AppIcon';
 import { useAuth } from '../context/AuthContext';
 import { useRepo } from '../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../theme';
@@ -35,40 +36,56 @@ export function SubscriptionScreen() {
   if (user?.accountType !== 'merchant') {
     return (
       <View style={styles.root}>
-        <Text style={styles.empty}>صفحة الاشتراك مخصصة لأصحاب المتاجر 🏬</Text>
+        <View style={styles.emptyWrap}>
+          <AppIcon name="storefront" size={52} color={colors.textMuted} />
+          <Text style={styles.empty}>صفحة الاشتراك مخصصة لأصحاب المتاجر</Text>
+        </View>
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.wrap}>
-      <Text style={styles.title}>💳 اشتراك المتجر</Text>
+      <View style={styles.titleRow}>
+        <AppIcon name="credit-card" size={26} color={colors.primary} />
+        <Text style={styles.title}>اشتراك المتجر</Text>
+      </View>
 
       {sub && (
         <View style={[styles.statusBox, sub.status === 'active' ? styles.ok : styles.wait]}>
-          <Text style={styles.statusText}>
-            {sub.status === 'active' ? '✅ اشتراكك مفعّل' : sub.status === 'pending' ? '⏳ اشتراكك قيد المراجعة' : '❌ الاشتراك منتهي'}
-          </Text>
+          <View style={styles.statusRow}>
+            <AppIcon
+              name={sub.status === 'active' ? 'check-circle' : sub.status === 'pending' ? 'clock' : 'close-circle'}
+              size={20}
+              color={sub.status === 'active' ? colors.verifiedText : sub.status === 'pending' ? '#8A6D14' : colors.danger}
+            />
+            <Text style={styles.statusText}>
+              {sub.status === 'active' ? 'اشتراكك مفعّل' : sub.status === 'pending' ? 'اشتراكك قيد المراجعة' : 'الاشتراك منتهي'}
+            </Text>
+          </View>
         </View>
       )}
 
       {/* الخطط */}
       <View style={styles.plan}>
-        <Text style={styles.planTag}>🎉 فترة الانطلاق</Text>
+        <Text style={styles.planTag}>فترة الانطلاق</Text>
         <Text style={styles.planName}>الخطة المجانية</Text>
         <Text style={styles.planPrice}>مجانًا</Text>
         <Text style={styles.planDesc}>انشر منتجاتك ومتجرك مجانًا خلال فترة الانطلاق</Text>
       </View>
 
       <View style={[styles.plan, styles.planPro]}>
-        <Text style={styles.planTag}>⭐ الأكثر تميزًا</Text>
+        <Text style={styles.planTag}>الأكثر تميزًا</Text>
         <Text style={styles.planName}>الاشتراك الشهري</Text>
         <Text style={styles.planPrice}>السعر يُعلن لاحقًا</Text>
-        <Text style={styles.planDesc}>متجر موثق ✅ + أولوية الظهور + دعم مباشر</Text>
+        <Text style={styles.planDesc}>متجر موثق + أولوية الظهور + دعم مباشر</Text>
       </View>
 
       {/* خطوات الدفع بالإيصال */}
-      <Text style={styles.secTitle}>الدفع بالإيصال 🧾</Text>
+      <View style={styles.secTitleRow}>
+        <AppIcon name="receipt" size={20} color={colors.text} />
+        <Text style={styles.secTitlePlain}>الدفع بالإيصال</Text>
+      </View>
       {STEPS.map(s => (
         <View key={s.n} style={styles.step}>
           <View style={styles.stepNum}>
@@ -82,9 +99,17 @@ export function SubscriptionScreen() {
       ))}
 
       <Pressable style={styles.btn} onPress={upload}>
-        <Text style={styles.btnText}>📤 رفع إيصال</Text>
+        <View style={styles.btnRow}>
+          <AppIcon name="upload" size={18} color={colors.white} />
+          <Text style={styles.btnText}>رفع إيصال</Text>
+        </View>
       </Pressable>
-      {picked && <Text style={styles.picked}>✅ تم رفع الإيصال — قيد المراجعة ⏳</Text>}
+      {picked && (
+        <View style={styles.pickedRow}>
+          <AppIcon name="check-circle" size={18} color={colors.verifiedText} />
+          <Text style={styles.picked}>تم رفع الإيصال — قيد المراجعة</Text>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -92,7 +117,12 @@ export function SubscriptionScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   wrap: { padding: spacing.lg },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   title: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text, textAlign: 'center' },
+  statusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  btnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pickedRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: spacing.sm },
+  emptyWrap: { alignItems: 'center', marginTop: 60, gap: 8 },
   statusBox: { borderRadius: radius.md, padding: spacing.md, marginTop: spacing.md, alignItems: 'center' },
   ok: { backgroundColor: colors.verifiedBg },
   wait: { backgroundColor: '#FFF4D6' },
@@ -103,6 +133,8 @@ const styles = StyleSheet.create({
   planName: { fontSize: fontSize.lg, fontWeight: '800', color: colors.text, marginTop: 4 },
   planPrice: { fontSize: fontSize.xl, fontWeight: '800', color: colors.gold, marginTop: 4 },
   planDesc: { fontSize: fontSize.sm, color: colors.textMuted, marginTop: 4, lineHeight: 22 },
+  secTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.xl, marginBottom: spacing.sm },
+  secTitlePlain: { fontSize: fontSize.md, fontWeight: '800', color: colors.text },
   secTitle: { fontSize: fontSize.md, fontWeight: '800', color: colors.text, marginTop: spacing.xl, marginBottom: spacing.sm },
   step: { flexDirection: 'row', backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, alignItems: 'center' },
   stepNum: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
@@ -112,6 +144,6 @@ const styles = StyleSheet.create({
   stepDesc: { fontSize: fontSize.sm, color: colors.textMuted, marginTop: 2 },
   btn: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.lg },
   btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
-  picked: { textAlign: 'center', color: colors.verifiedText, fontWeight: '700', marginTop: spacing.sm },
-  empty: { textAlign: 'center', marginTop: 60, color: colors.textMuted, fontSize: fontSize.md },
+  picked: { textAlign: 'center', color: colors.verifiedText, fontWeight: '700' },
+  empty: { textAlign: 'center', color: colors.textMuted, fontSize: fontSize.md },
 });
