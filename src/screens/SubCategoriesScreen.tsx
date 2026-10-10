@@ -48,7 +48,7 @@ export function SubCategoriesScreen({ navigation, route }: Props) {
                 title: item.name,
               })
             }>
-            <SectionImage section={item} size={60} />
+            <SectionImage section={item} size={140} style={{ width: '100%', aspectRatio: 1, borderRadius: 0 }} />
             <Text style={styles.name}>{item.name}</Text>
           </Pressable>
         )}
@@ -70,12 +70,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.card,
     borderRadius: radius.lg,
-    padding: spacing.lg,
+    overflow: 'hidden',
+    paddingBottom: spacing.md,
     margin: spacing.sm,
-    alignItems: 'center',
     elevation: 1,
   },
-  name: { fontSize: fontSize.sm, fontWeight: '700', color: colors.text, marginTop: spacing.sm, textAlign: 'center' },
+  name: { fontSize: fontSize.sm, fontWeight: '700', color: colors.text, marginTop: spacing.sm, textAlign: 'center', paddingHorizontal: spacing.sm },
   emptyWrap: { alignItems: 'center', marginTop: spacing.xl * 2, gap: 8 },
   empty: { textAlign: 'center', color: colors.textMuted, fontSize: fontSize.md },
 });

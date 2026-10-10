@@ -342,7 +342,7 @@ export function HomeScreen({ navigation }: Props) {
         {SECTIONS.map(s => (
           <Pressable key={s.key} onPress={() => goSection(s.key)}>
             <View style={styles.sectionCard}>
-              <SectionImage section={s} size={60} />
+              <SectionImage section={s} size={SECTION_CARD_W} style={{ borderRadius: 0 }} />
               <Text style={styles.sectionName} numberOfLines={2}>{s.name}</Text>
             </View>
           </Pressable>
@@ -482,9 +482,8 @@ const styles = StyleSheet.create({
     width: SECTION_CARD_W,
     backgroundColor: colors.card,
     borderRadius: radius.lg,
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.sm,
+    overflow: 'hidden',
+    paddingBottom: spacing.sm,
     elevation: 3,
     shadowColor: '#000',
     shadowOpacity: 0.08,
@@ -498,7 +497,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sectionName: { fontSize: fontSize.sm, fontWeight: '800', color: colors.text, marginTop: 8, textAlign: 'center' },
+  sectionName: { fontSize: fontSize.sm, fontWeight: '800', color: colors.text, marginTop: 8, textAlign: 'center', paddingHorizontal: 4 },
   // بطاقات المتاجر المميزة
   storeList: { paddingHorizontal: spacing.md, gap: spacing.md },
   storeCard: {
