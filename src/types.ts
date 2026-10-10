@@ -12,6 +12,7 @@ export interface Section {
   icon: string;
   g1: string;
   g2: string;
+  image?: number;
 }
 
 export interface SubCategory {

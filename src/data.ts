@@ -6,12 +6,12 @@ type SeedListing = Omit<Listing, 'status' | 'createdAt'>;
 export const GOVS = ['الكل', 'الحسكة', 'القامشلي', 'دير الزور', 'الرقة'];
 
 export const SECTIONS: Section[] = [
-  { key: 'estate', name: 'عقارات', icon: 'home', g1: '#0E6B4A', g2: '#2E9E6B' },
-  { key: 'medical', name: 'طبي', icon: 'stethoscope', g1: '#1E6FA3', g2: '#4FB0E3' },
-  { key: 'cars', name: 'سيارات', icon: 'car', g1: '#3A3F4B', g2: '#7A8494' },
-  { key: 'food', name: 'مطاعم ومأكولات', icon: 'silverware-fork-knife', g1: '#A33E2A', g2: '#E07B4F' },
-  { key: 'malls', name: 'مولات ومتاجر', icon: 'storefront', g1: '#7A4A1F', g2: '#D9A441' },
-  { key: 'services', name: 'خدمات وحرف', icon: 'tools', g1: '#5B4A8A', g2: '#9A8AD1' },
+  { key: 'estate', name: 'عقارات', icon: 'home', g1: '#0E6B4A', g2: '#2E9E6B', image: require('../assets/sections/estate.jpg') },
+  { key: 'medical', name: 'طبي', icon: 'stethoscope', g1: '#1E6FA3', g2: '#4FB0E3', image: require('../assets/sections/medical.jpg') },
+  { key: 'cars', name: 'سيارات', icon: 'car', g1: '#3A3F4B', g2: '#7A8494', image: require('../assets/sections/cars.jpg') },
+  { key: 'food', name: 'مطاعم ومأكولات', icon: 'silverware-fork-knife', g1: '#A33E2A', g2: '#E07B4F', image: require('../assets/sections/food.jpg') },
+  { key: 'malls', name: 'مولات ومتاجر', icon: 'storefront', g1: '#7A4A1F', g2: '#D9A441', image: require('../assets/sections/malls.jpg') },
+  { key: 'services', name: 'خدمات وحرف', icon: 'tools', g1: '#5B4A8A', g2: '#9A8AD1', image: require('../assets/sections/services.jpg') },
 ];
 
 export const SUBCATS: Record<string, SubCategory[]> = {

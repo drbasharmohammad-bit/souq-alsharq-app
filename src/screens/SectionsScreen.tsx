@@ -3,7 +3,7 @@ import { CompositeScreenProps } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { PlaceholderImage } from '../components/PlaceholderImage';
+import { SectionImage } from '../components/SectionImage';
 import { AppIcon } from '../components/AppIcon';
 import { SECTIONS } from '../data';
 import { RootStackParamList, TabsParamList } from '../navigation/types';
@@ -41,7 +41,7 @@ export function SectionsScreen({ navigation }: Props) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         renderItem={({ item }) => (
           <Pressable style={styles.card} onPress={() => go(item.key)}>
-            <PlaceholderImage icon={item.icon} color={item.g1} size={64} />
+            <SectionImage section={item} size={96} />
             <Text style={styles.name}>{item.name}</Text>
           </Pressable>
         )}

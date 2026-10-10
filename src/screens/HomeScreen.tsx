@@ -8,6 +8,7 @@ import { AppIcon } from '../components/AppIcon';
 import { GovChips } from '../components/GovChips';
 import { PlaceholderImage } from '../components/PlaceholderImage';
 import { RemoteImage } from '../components/RemoteImage';
+import { SectionImage } from '../components/SectionImage';
 import { useGov } from '../context/GovContext';
 import { useFavorites } from '../context/FavoritesContext';
 import { GOVS, SECTIONS, formatPrice, sectionName } from '../data';
@@ -341,9 +342,7 @@ export function HomeScreen({ navigation }: Props) {
         {SECTIONS.map(s => (
           <Pressable key={s.key} onPress={() => goSection(s.key)}>
             <View style={styles.sectionCard}>
-              <View style={[styles.sectionIcon, { backgroundColor: s.g1 + '1A' }]}>
-                <AppIcon name={s.icon} size={28} color={s.g1} />
-              </View>
+              <SectionImage section={s} size={60} />
               <Text style={styles.sectionName} numberOfLines={2}>{s.name}</Text>
             </View>
           </Pressable>
