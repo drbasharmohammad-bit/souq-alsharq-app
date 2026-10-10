@@ -1,7 +1,7 @@
 // إعدادات التطبيق — تُضبط قبل الإطلاق
 export const ADMIN_EMAIL = 'drbasharmohammad@gmail.com'; // إيميل المدير — الدخول بحساب جوجل
 
-export const APP_NAME = 'سوق الشرق';
+export const APP_NAME = 'HDR';
 
 // Web OAuth Client ID من Firebase Console (Authentication ← Sign-in method ← Google)
 // من النوع 3 (Web) في google-services.json — مطلوب لاستخراج idToken على الأندرويد

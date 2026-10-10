@@ -31,7 +31,7 @@ export function AccountScreen({ navigation }: Props) {
     return (
       <ScrollView style={styles.root} contentContainerStyle={styles.wrap}>
         <PlaceholderImage icon="account" color={colors.primary} size={88} />
-        <Text style={styles.title}>مرحبًا بك في سوق الشرق</Text>
+        <Text style={styles.title}>مرحبًا بك في HDR</Text>
         <Text style={styles.sub}>سجّل دخولك لتتمكن من نشر الإعلانات وإدارة متجرك</Text>
 
         <Pressable style={[styles.btn, styles.btnPrimary]} onPress={() => navigation.navigate('GoogleLogin')}>

@@ -1,4 +1,4 @@
-// هوية سوق الشرق — الأخضر الزمردي + الذهبي
+// هوية HDR — الزمردي العميق + الأبيض
 export const colors = {
   primary: '#0E6B4A',
   primaryDark: '#0A5238',

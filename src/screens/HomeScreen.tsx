@@ -23,7 +23,7 @@ type Props = CompositeScreenProps<
 >;
 
 const BANNERS = [
-  { id: 'b1', title: 'سوق الشرق', sub: 'كل إعلانات الجزيرة والفرات بمكان واحد', c: '#0E6B4A', icon: 'store' },
+  { id: 'b1', title: 'HDR', sub: 'كل إعلانات الجزيرة والفرات بمكان واحد', c: '#0E6B4A', icon: 'store' },
   { id: 'b2', title: 'أضف إعلانك مجانًا', sub: 'بيع واشترِ بسهولة في محافظتك', c: '#7A4A1F', icon: 'bullhorn' },
   { id: 'b3', title: 'دليل طبي موثق', sub: 'أطباء وصيدليات ببيانات مؤكدة من الإدارة', c: '#1E6FA3', icon: 'stethoscope' },
 ];
@@ -244,7 +244,7 @@ export function HomeScreen({ navigation }: Props) {
       <View style={styles.header}>
         <View style={styles.logoRow}>
           <AppIcon name="store" size={30} color={colors.white} />
-          <Text style={styles.logo}>سوق الشرق</Text>
+          <Text style={styles.logo}>HDR</Text>
         </View>
         <Text style={styles.tagline}>إعلانات الجزيرة والفرات</Text>
         <Pressable style={styles.searchBox} onPress={() => navigation.navigate('Search')}>

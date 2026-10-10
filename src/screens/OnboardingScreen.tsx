@@ -23,7 +23,7 @@ type Slide = {
 const SLIDES: Slide[] = [
   {
     icon: 'storefront',
-    title: 'سوق الشرق',
+    title: 'HDR',
     description: 'سوق المنطقة الشرقية — الحسكة • القامشلي • دير الزور • الرقة',
   },
   {
