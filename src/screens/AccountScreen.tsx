@@ -44,13 +44,13 @@ export function AccountScreen({ navigation }: Props) {
         <View style={styles.types}>
           <View style={styles.typeCard}>
             <AppIcon name="storefront" size={38} color={colors.primary} />
-            <Text style={styles.typeTitle}>حساب تاجر</Text>
+            <Text style={styles.typeTitle}>صاحب متجر</Text>
             <Text style={styles.typeDesc}>أنشئ متجرك واعرض منتجاتك — اشتراك شهري</Text>
           </View>
           <View style={styles.typeCard}>
             <AppIcon name="account" size={38} color={colors.primary} />
-            <Text style={styles.typeTitle}>حساب فرد</Text>
-            <Text style={styles.typeDesc}>انشر إعلاناتك مباشرة — مجانًا</Text>
+            <Text style={styles.typeTitle}>بائع حر</Text>
+            <Text style={styles.typeDesc}>انشر إعلاناتك في أي قسم — مجانًا</Text>
           </View>
         </View>
       </ScrollView>
@@ -82,7 +82,7 @@ export function AccountScreen({ navigation }: Props) {
       <Text style={styles.title}>{displayName}</Text>
       <View style={styles.subRow}>
         <AppIcon name={isMerchant ? 'storefront' : 'account'} size={15} color={colors.textMuted} />
-        <Text style={styles.sub}>{isMerchant ? 'حساب تاجر' : 'حساب فرد'}</Text>
+        <Text style={styles.sub}>{isMerchant ? 'صاحب متجر' : 'بائع حر'}</Text>
         {user.phone ? (
           <>
             <AppIcon name="phone" size={15} color={colors.textMuted} />

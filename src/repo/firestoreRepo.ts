@@ -13,7 +13,6 @@ import {
   DOCTORS,
   LABS,
   LISTINGS,
-  MERCHANT_ONLY_SECTIONS,
   PHARMS,
   STORES,
 } from '../data';
@@ -364,6 +363,12 @@ function mapLab(id: string, d: Record<string, unknown>): LabEntry {
  * - الصور المحلية تُرفع في الخلفية عبر storage.ts ثم يُحدَّث الكاش
  *   والمستند بروابط التحميل.
  */
+
+// صورة حقيقية = رابط بعيد واحد على الأقل (ليس URI محليًا)
+function hasRealImage(uris?: string[]): boolean {
+  return !!uris?.some(u => typeof u === 'string' && u.startsWith('http'));
+}
+
 export class FirestoreRepo implements Repository {
   private listings: Listing[];
   private stores: Store[];
@@ -601,13 +606,6 @@ export class FirestoreRepo implements Repository {
   }
 
   addListing(input: NewListingInput): Listing {
-    // دفاع: الحساب الفردي ممنوع من قسمی المطاعم والمتاجر (قرار الإدارة)
-    if (
-      input.sellerType === 'individual' &&
-      MERCHANT_ONLY_SECTIONS.includes(input.sec)
-    ) {
-      throw new Error('individual listing in merchant-only section');
-    }
     const refDoc = doc(collection(this.db, C.listings));
     const listing: Listing = {
       ...input,
@@ -1143,6 +1141,10 @@ export class FirestoreRepo implements Repository {
   }
 
   addFeaturedRequest(input: NewFeaturedRequestInput): FeaturedRequest {
+    // قاعدة: طلب التمييز لا يُقبل بلا صورة حقيقية
+    if (!hasRealImage(input.imageUri ? [input.imageUri] : undefined)) {
+      throw new Error('featured request requires a real image');
+    }
     const refDoc = doc(collection(this.db, C.featuredRequests));
     const f: FeaturedRequest = {
       ...input,

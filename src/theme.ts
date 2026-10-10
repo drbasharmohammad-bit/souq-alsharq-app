@@ -1,7 +1,7 @@
-// هوية HDR — الزمردي العميق + الأبيض
+// هوية HDR — الزمردي العميق (مواءمة مع لون اللوجو #0D4937) + الأبيض
 export const colors = {
-  primary: '#0E6B4A',
-  primaryDark: '#0A5238',
+  primary: '#0D4937',
+  primaryDark: '#093A2B',
   primaryLight: '#2E9E6B',
   gold: '#C9A227',
   goldLight: '#E8CE6B',
@@ -13,7 +13,7 @@ export const colors = {
   danger: '#A33E2A',
   info: '#1E6FA3',
   verifiedBg: '#E6F4EC',
-  verifiedText: '#0E6B4A',
+  verifiedText: '#0D4937',
   individualBg: '#E8F1FA',
   individualText: '#1E6FA3',
   white: '#FFFFFF',

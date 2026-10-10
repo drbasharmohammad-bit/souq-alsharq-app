@@ -2,7 +2,6 @@ import {
   DOCTORS,
   LABS,
   LISTINGS,
-  MERCHANT_ONLY_SECTIONS,
   PHARMS,
   STORES,
 } from '../data';
@@ -48,6 +47,12 @@ const nid = (p: string) => `${p}${seq++}`;
 
 // التطبيق المحلي — ذاكرة + بيانات البذور.
 // يُستبدل لاحقًا بتطبيق Firebase دون تغيير أي شاشة.
+
+// صورة حقيقية = رابط بعيد واحد على الأقل (ليس URI محليًا)
+function hasRealImage(uris?: string[]): boolean {
+  return !!uris?.some(u => typeof u === 'string' && u.startsWith('http'));
+}
+
 export class LocalRepo implements Repository {
   private listings: Listing[];
   private stores: Store[];
@@ -115,13 +120,6 @@ export class LocalRepo implements Repository {
   }
 
   addListing(input: NewListingInput): Listing {
-    // دفاع: الحساب الفردي ممنوع من قسمی المطاعم والمتاجر (قرار الإدارة)
-    if (
-      input.sellerType === 'individual' &&
-      MERCHANT_ONLY_SECTIONS.includes(input.sec)
-    ) {
-      throw new Error('individual listing in merchant-only section');
-    }
     const listing: Listing = {
       ...input,
       id: nid('u'),
@@ -472,6 +470,10 @@ export class LocalRepo implements Repository {
   }
 
   addFeaturedRequest(input: NewFeaturedRequestInput): FeaturedRequest {
+    // قاعدة: طلب التمييز لا يُقبل بلا صورة حقيقية
+    if (!hasRealImage(input.imageUri ? [input.imageUri] : undefined)) {
+      throw new Error('featured request requires a real image');
+    }
     const f: FeaturedRequest = {
       ...input,
       id: nid('feat'),

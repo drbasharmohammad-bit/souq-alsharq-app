@@ -6,7 +6,7 @@ import { FormField } from '../../components/FormField';
 import { ImagePickerField } from '../../components/ImagePickerField';
 import { SelectChips } from '../../components/SelectChips';
 import { useAuth } from '../../context/AuthContext';
-import { GOVS, MERCHANT_ONLY_SECTIONS, SUBCATS, sectionName } from '../../data';
+import { GOVS, SUBCATS, sectionName } from '../../data';
 import { RootStackParamList } from '../../navigation/types';
 import { useRepo } from '../../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../../theme';
@@ -73,16 +73,6 @@ export function PublishFormScreen({ navigation, route }: Props) {
       return;
     }
     if (!user || !sub) return;
-
-    // دفاع: الحساب الفردي ممنوع من قسمی المطاعم والمتاجر (قرار الإدارة)
-    if (
-      user.accountType === 'individual' &&
-      user.isAdmin !== true &&
-      (MERCHANT_ONLY_SECTIONS as string[]).includes(sectionKey)
-    ) {
-      Alert.alert('غير مسموح', 'هذا القسم مخصص لأصحاب المتاجر.');
-      return;
-    }
 
     const isMerchant = user.accountType === 'merchant';
     const store = isMerchant && user.storeId ? repo.getStoreById(user.storeId) : undefined;
@@ -192,12 +182,11 @@ export function PublishFormScreen({ navigation, route }: Props) {
       )}
       <FormField label="الوصف" value={f.desc ?? ''} onChange={v => set('desc', v)} placeholder="اكتب تفاصيل الإعلان..." multiline required error={errors.desc} />
 
-      {(isCars || isEstate) && (
-        <>
-          <ImagePickerField images={images} onChange={setImages} max={6} label="صور الإعلان" />
-          {errors.images ? <Text style={styles.error}>{errors.images}</Text> : null}
-        </>
+      <ImagePickerField images={images} onChange={setImages} max={6} label="صور الإعلان" />
+      {!(isCars || isEstate) && (
+        <Text style={styles.hint}>الإعلانات المصورة تُشاهد أكثر</Text>
       )}
+      {errors.images ? <Text style={styles.error}>{errors.images}</Text> : null}
 
       <Pressable style={[styles.btn, saving && styles.btnDisabled]} onPress={submit} disabled={saving}>
         {saving ? (
@@ -221,4 +210,5 @@ const styles = StyleSheet.create({
   btnDisabled: { opacity: 0.7 },
   btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
   error: { fontSize: fontSize.xs, color: colors.danger, marginTop: -spacing.sm, marginBottom: spacing.md },
+  hint: { fontSize: fontSize.xs, color: colors.textMuted, marginTop: -spacing.sm, marginBottom: spacing.md },
 });

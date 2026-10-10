@@ -253,9 +253,11 @@ export function HomeScreen({ navigation }: Props) {
           <AppIcon name="store" size={120} color={colors.white} />
         </View>
         <View style={styles.logoRow}>
-          <View style={styles.logoBadge}>
-            <AppIcon name="store" size={26} color={colors.primary} />
-          </View>
+          <Image
+            source={require('../assets/hdr-logo-white.png')}
+            style={styles.monogram}
+            resizeMode="contain"
+          />
           <Text style={styles.logo}>HDR</Text>
         </View>
         <Text style={styles.tagline}>حسكتك، ديرتك، رقتك... بتطبيق واحد</Text>
@@ -379,11 +381,7 @@ const styles = StyleSheet.create({
   },
   headerDeco: { position: 'absolute', left: -24, top: -18, opacity: 0.1 },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logoBadge: {
-    width: 44, height: 44, borderRadius: 14,
-    backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center',
-    elevation: 2,
-  },
+  monogram: { width: 64, height: 40 },
   logo: { fontSize: 32, fontWeight: '800', color: colors.white, letterSpacing: 3 },
   tagline: { fontSize: fontSize.md, color: colors.white, opacity: 0.92, marginTop: 8, fontWeight: '600' },
   searchBox: {

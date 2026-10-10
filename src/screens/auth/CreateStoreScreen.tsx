@@ -57,7 +57,7 @@ export function CreateStoreScreen({ navigation }: Props) {
       <Text style={styles.sub}>معلومات متجرك كما ستظهر للزبائن</Text>
 
       <FormField label="اسم المتجر" value={name} onChange={setName} placeholder="مثال: مفروشات الشرق" required />
-      <SelectChips label="القسم الرئيسي" options={SECTIONS.filter(s => s.key !== 'medical').map(s => s.name)} value={sec} onChange={setSec} />
+      <SelectChips label="نوع المتجر" options={SECTIONS.filter(s => s.key !== 'medical').map(s => s.name)} value={sec} onChange={setSec} />
       <SelectChips label="المحافظة" options={GOVS.filter(g => g !== 'الكل')} value={gov} onChange={setGov} />
       <FormField label="رقم الهاتف" value={phone} onChange={setPhone} placeholder="09xxxxxxxx" keyboardType="phone-pad" required />
       <FormField label="أوقات الدوام" value={hours} onChange={setHours} placeholder="مثال: يوميًا 9 صباحًا - 11 مساءً" />

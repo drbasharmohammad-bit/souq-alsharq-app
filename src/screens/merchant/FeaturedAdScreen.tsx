@@ -46,7 +46,7 @@ export function FeaturedAdScreen({}: Props) {
   const submit = async () => {
     if (!user || !user.storeId) return;
     if (bannerImg.length === 0) {
-      Alert.alert('تنبيه', 'اختر صورة الإعلان أولًا');
+      Alert.alert('تنبيه', 'الإعلانات المميزة تحتاج صورة حقيقية واحدة على الأقل');
       return;
     }
     if (settings.price > 0 && receipt.length === 0) {

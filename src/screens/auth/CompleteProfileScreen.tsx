@@ -103,14 +103,14 @@ export function CompleteProfileScreen({ navigation }: Props) {
           <Card
             value="merchant"
             icon="storefront"
-            title="حساب تاجر"
-            desc="أنشئ متجرك واعرض منتجاتك لآلاف الزبائن — اشتراك شهري"
+            title="صاحب متجر"
+            desc="سجّل بيانات متجرك ونوعه — صفحة متجر كاملة بمنتجات وتقييمات"
           />
           <Card
             value="individual"
             icon="account"
-            title="حساب فرد"
-            desc="انشر إعلاناتك مباشرة: سيارتك، شقتك، خدماتك — مجانًا"
+            title="بائع حر"
+            desc="انشر إعلاناتك في أي قسم: شقة، سيارة، خدمة، حتى مطعم بيتي — مجانًا"
           />
         </View>
       )}

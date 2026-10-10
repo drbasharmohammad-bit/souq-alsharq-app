@@ -29,19 +29,10 @@ service cloud.firestore {
         && request.resource.data.ownerUid == request.auth.uid;
     }
 
-    // نوع حساب الطالب من مستند المستخدم (لمنع الأفراد من أقسام التجار)
-    function requesterIsMerchant() {
-      return isSignedIn()
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountType == 'merchant';
-    }
-
     // ——— محتوى المستخدمين: قراءة عامة، كتابة للمالك أو الإدارة ———
-    // قسما المطاعم والمتاجر للتجار فقط (قرار الإدارة) — الفردي ممنوع من النشر فيهما
     match /listings/{docId} {
       allow read: if true;
-      allow create: if createsOwnDoc()
-        && (isAdmin() || requesterIsMerchant()
-            || !(request.resource.data.sec in ['food', 'malls']));
+      allow create: if createsOwnDoc();
       allow update, delete: if ownsDoc() || isAdmin();
     }
 
