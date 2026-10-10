@@ -1,10 +1,7 @@
-import { getAuth } from '@react-native-firebase/auth';
 import {
-  getDownloadURL,
-  getStorage,
-  putFile,
-  ref,
-} from '@react-native-firebase/storage';
+  CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_UPLOAD_PRESET,
+} from '../config';
 
 /**
  * هل الـURI محلية وتحتاج رفعًا؟
@@ -15,19 +12,35 @@ export function isLocalUri(uri: string): boolean {
 }
 
 /**
- * يرفع صورة محلية إلى Storage تحت uploads/{uid}/{folder}/
- * ويعيد رابط التحميل (download URL).
- * عند غياب مستخدم مسجّل يُستخدم المجلد 'shared' (الكتابة فيه
- * محكومة بقواعد Storage وقد تُرفض — يُسجَّل الخطأ عند الاستدعاء).
+ * يرفع صورة محلية إلى Cloudinary (خطة مجانية) عبر preset غير موقّع،
+ * ويعيد رابط التحميل الآمن (https).
+ * Firebase Storage متروك: يتطلب خطة Blaze المدفوعة (قرار 10 أكتوبر 2026).
  */
 export async function uploadImage(
   localUri: string,
-  folder: string,
+  _folder: string,
 ): Promise<string> {
-  const uid = getAuth().currentUser?.uid ?? 'shared';
-  const rand = Math.random().toString(36).slice(2, 10);
-  const path = `uploads/${uid}/${folder}/${Date.now()}_${rand}.jpg`;
-  const storageRef = ref(getStorage(), path);
-  await putFile(storageRef, localUri);
-  return getDownloadURL(storageRef);
+  const formData = new FormData();
+  formData.append('file', {
+    uri: localUri,
+    type: 'image/jpeg',
+    name: `img_${Date.now()}.jpg`,
+  } as unknown as Blob);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+    { method: 'POST', body: formData },
+  );
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    throw new Error(
+      `Cloudinary upload failed (${res.status}): ${txt.slice(0, 200)}`,
+    );
+  }
+  const json = (await res.json()) as { secure_url?: string };
+  if (!json.secure_url) {
+    throw new Error('Cloudinary upload: missing secure_url in response');
+  }
+  return json.secure_url;
 }
