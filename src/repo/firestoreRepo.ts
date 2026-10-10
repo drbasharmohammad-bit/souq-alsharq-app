@@ -56,6 +56,7 @@ import {
   Repository,
 } from './types';
 import { isLocalUri, uploadImage } from './storage';
+import { ADMIN_EMAIL } from '../config';
 
 // ——— المجموعات ———
 const C = {
@@ -127,6 +128,12 @@ function stripId<T extends { id: string }>(e: T): Omit<T, 'id'> {
 /** uid المالك الحالي للكتابات المملوكة. */
 function currentOwnerUid(): string {
   return getAuth().currentUser?.uid ?? 'anonymous';
+}
+
+/** هل المستخدم الحالي هو المدير (مطابق لقواعد Firestore). */
+function isCurrentAdmin(): boolean {
+  const email = getAuth().currentUser?.email ?? '';
+  return email.trim().toLowerCase() === ADMIN_EMAIL.trim().toLowerCase();
 }
 
 function logWriteErr(what: string, err: unknown): void {
@@ -434,11 +441,98 @@ export class FirestoreRepo implements Repository {
     map: (id: string, data: Record<string, unknown>) => T,
     apply: (items: T[]) => void,
   ): Promise<void> {
-    const snap = await getDocs(collection(this.db, collName));
-    if (snap.docs.length === 0) return; // لا مستندات بعيدة — يُبقي البذر المحلي
-    apply(
-      snap.docs.map(d => map(d.id, d.data() as Record<string, unknown>)),
-    );
+    try {
+      const snap = await getDocs(collection(this.db, collName));
+      if (snap.docs.length === 0) return; // لا مستندات بعيدة — يُبقي البذر المحلي
+      apply(
+        snap.docs.map(d => map(d.id, d.data() as Record<string, unknown>)),
+      );
+    } catch (err) {
+      // تجاوز صامت لأخطاء الصلاحية (مجموعات مقيدة) — يُبقي الكاش المحلي
+      console.warn(`[FirestoreRepo] loadCollection ${collName} skipped`, err);
+    }
+  }
+
+  // ——— المجموعات المقيدة (قواعد ما قبل الإطلاق) ———
+
+  /** المستخدمون: الإدارة فقط تحمّل الكل — العادي مستنده يُجلب مباشرة في AuthContext. */
+  private async loadUsers(): Promise<void> {
+    if (!isCurrentAdmin()) return;
+    await this.loadCollection(C.users, mapUser, v => {
+      this.users = v;
+    });
+  }
+
+  /** الاشتراكات: الإدارة تحمّل الكل — العادي اشتراكاته فقط (ownerUid). */
+  private async loadSubscriptions(): Promise<void> {
+    if (isCurrentAdmin()) {
+      await this.loadCollection(C.subscriptions, mapSubscription, v => {
+        this.subscriptions = v;
+      });
+      return;
+    }
+    const uid = getAuth().currentUser?.uid;
+    if (!uid) return;
+    try {
+      const snap = await getDocs(
+        query(collection(this.db, C.subscriptions), where('ownerUid', '==', uid)),
+      );
+      const remote = snap.docs.map(d =>
+        mapSubscription(d.id, d.data() as Record<string, unknown>),
+      );
+      // دمج: تحديث الموجود وإضافة الجديد، بلا مسح (الكاش يحمل المضاف محليًا)
+      const byId = new Map(this.subscriptions.map(s => [s.id, s]));
+      remote.forEach(s => byId.set(s.id, s));
+      this.subscriptions = [...byId.values()];
+    } catch (err) {
+      console.warn('[FirestoreRepo] loadSubscriptions skipped', err);
+    }
+  }
+
+  /**
+   * طلبات التمييز: الإدارة تحمّل الكل — العادي:
+   * النشطة (كاروسيل الرئيسية العامة) + طلباته الخاصة (لمنع التكرار وإظهار الحالة).
+   */
+  private async loadFeaturedRequests(): Promise<void> {
+    if (isCurrentAdmin()) {
+      await this.loadCollection(C.featuredRequests, mapFeaturedRequest, v => {
+        this.featured = v;
+      });
+      return;
+    }
+    const seen = new Map<string, FeaturedRequest>();
+    // دمج الحالي (طلبات أُنشئت محليًا قبل المزامنة)
+    this.featured.forEach(f => seen.set(f.id, f));
+    try {
+      const snap = await getDocs(
+        query(
+          collection(this.db, C.featuredRequests),
+          where('status', '==', 'active'),
+        ),
+      );
+      snap.docs.forEach(d =>
+        seen.set(d.id, mapFeaturedRequest(d.id, d.data() as Record<string, unknown>)),
+      );
+    } catch (err) {
+      console.warn('[FirestoreRepo] loadFeaturedRequests(active) skipped', err);
+    }
+    const uid = getAuth().currentUser?.uid;
+    if (uid) {
+      try {
+        const snap = await getDocs(
+          query(
+            collection(this.db, C.featuredRequests),
+            where('ownerUid', '==', uid),
+          ),
+        );
+        snap.docs.forEach(d =>
+          seen.set(d.id, mapFeaturedRequest(d.id, d.data() as Record<string, unknown>)),
+        );
+      } catch (err) {
+        console.warn('[FirestoreRepo] loadFeaturedRequests(own) skipped', err);
+      }
+    }
+    this.featured = [...seen.values()];
   }
 
   // تحميل الأطباء المعتمدين فقط — والمجموعة الفارغة تعني قائمة فارغة (بلا بذر)
@@ -459,9 +553,7 @@ export class FirestoreRepo implements Repository {
         this.loadCollection(C.stores, mapStore, v => {
           this.stores = v;
         }),
-        this.loadCollection(C.users, mapUser, v => {
-          this.users = v;
-        }),
+        this.loadUsers(),
         this.loadDoctors(),
         this.loadCollection(C.pharmacies, mapPharmacy, v => {
           this.pharmacies = v;
@@ -469,9 +561,7 @@ export class FirestoreRepo implements Repository {
         this.loadCollection(C.labs, mapLab, v => {
           this.labs = v;
         }),
-        this.loadCollection(C.subscriptions, mapSubscription, v => {
-          this.subscriptions = v;
-        }),
+        this.loadSubscriptions(),
         this.loadCollection(C.products, mapProduct, v => {
           this.products = v;
         }),
@@ -484,9 +574,7 @@ export class FirestoreRepo implements Repository {
         this.loadCollection(C.banners, mapBanner, v => {
           this.banners = v;
         }),
-        this.loadCollection(C.featuredRequests, mapFeaturedRequest, v => {
-          this.featured = v;
-        }),
+        this.loadFeaturedRequests(),
         this.loadCollection(C.reviews, mapReview, v => {
           this.reviews = v;
         }),

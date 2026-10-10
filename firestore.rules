@@ -1,9 +1,12 @@
 rules_version = '2';
 
 // سوق الشرق — قواعد Firestore
-// - قراءة عامة لكل المحتوى (بما فيها الإعلانات الإدارية).
+// - قراءة عامة لكتالوج المحتوى (إعلانات/متاجر/منتجات/تقييمات/تصنيفات).
+// - مقيد: users (للمالك أو الإدارة)، subscriptions (للمالك أو الإدارة)،
+//   featured_requests (النشطة للجميع — المعلقة للمالك أو الإدارة).
 // - الكتابة على المحتوى المملوك للمالك (ownerUid) أو الإدارة.
 // - مستندات المستخدمين: الإنشاء لمن يملك الـuid، التحديث للمالك أو الإدارة، الحذف للإدارة.
+// - isAdmin يشترط بريدًا موثّقًا (email_verified).
 // - announcements/banners/pharmacies/labs/featured_settings: الكتابة للإدارة فقط.
 // - doctors: التسجيل الذاتي — أي مسجل ينشئ طلبًا (pending حصرًا)، والقراءة العامة للمعتمدين فقط، والاعتماد للإدارة.
 service cloud.firestore {
@@ -15,6 +18,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return request.auth != null
+        && request.auth.token.email_verified == true
         && request.auth.token.email == 'drbasharmohammad@gmail.com';
     }
 
@@ -55,14 +59,20 @@ service cloud.firestore {
       allow update, delete: if ownsDoc() || isAdmin();
     }
 
+    // اشتراكات: القراءة للمالك أو الإدارة فقط (إيصالات الدفع حساسة)
     match /subscriptions/{docId} {
-      allow read: if true;
+      allow read: if isSignedIn()
+        && (resource.data.ownerUid == request.auth.uid || isAdmin());
       allow create: if createsOwnDoc();
       allow update, delete: if ownsDoc() || isAdmin();
     }
 
+    // طلبات التمييز: النشطة معلنة للجميع (كاروسيل الرئيسية) —
+    // المعلقة/المرفوضة/المنتهية للمالك أو الإدارة فقط
     match /featured_requests/{docId} {
-      allow read: if true;
+      allow read: if resource.data.status == 'active'
+        || (isSignedIn()
+            && (resource.data.ownerUid == request.auth.uid || isAdmin()));
       allow create: if createsOwnDoc();
       allow update, delete: if ownsDoc() || isAdmin();
     }
@@ -74,9 +84,9 @@ service cloud.firestore {
       allow update, delete: if ownsDoc() || isAdmin();
     }
 
-    // ——— المستخدمون ———
+    // ——— المستخدمون: القراءة للمالك أو الإدارة فقط (أرقام الهواتف حساسة) ———
     match /users/{uid} {
-      allow read: if true;
+      allow read: if isSignedIn() && (uid == request.auth.uid || isAdmin());
       allow create: if isSignedIn() && uid == request.auth.uid;
       // المالك يحدّث بياناته لكن لا يمنح نفسه صلاحية الإدارة
       allow update: if isAdmin()
