@@ -6,8 +6,10 @@ import {
   getDoc,
   getDocs,
   getFirestore,
+  query,
   setDoc,
   updateDoc,
+  where,
 } from '@react-native-firebase/firestore';
 import {
   DOCTORS,
@@ -324,6 +326,8 @@ function mapDoctor(id: string, d: Record<string, unknown>): DoctorEntry {
     days: String(d.days ?? ''),
     icon: String(d.icon ?? ''),
     photo: str(d.photo),
+    status: (d.status === 'pending' || d.status === 'rejected' ? d.status : 'approved') as DoctorEntry['status'],
+    ownerUid: str(d.ownerUid),
   };
 }
 
@@ -409,7 +413,7 @@ export class FirestoreRepo implements Repository {
       createdAt: now,
     }));
     this.stores = [...STORES];
-    this.doctors = DOCTORS.map((d, i) => ({ ...d, id: `doc${i}` }));
+    this.doctors = []; // بلا بذر — الأطباء بالتسجيل الذاتي والموافقة فقط (v14)
     this.pharmacies = PHARMS.map((p, i) => ({ ...p, id: `ph${i}` }));
     this.labs = LABS.map((l, i) => ({ ...l, id: `lab${i}` }));
     // تقييمات تجريبية لأحد المتاجر
@@ -435,6 +439,15 @@ export class FirestoreRepo implements Repository {
     );
   }
 
+  // تحميل الأطباء المعتمدين فقط — والمجموعة الفارغة تعني قائمة فارغة (بلا بذر)
+  private async loadDoctors(): Promise<void> {
+    const snap = await getDocs(
+      query(collection(this.db, C.doctors), where('status', '==', 'approved')),
+    );
+    this.doctors = snap.docs.map(d => mapDoctor(d.id, d.data() as Record<string, unknown>));
+    this.emit();
+  }
+
   private async hydrate(): Promise<void> {
     try {
       await Promise.all([
@@ -447,9 +460,7 @@ export class FirestoreRepo implements Repository {
         this.loadCollection(C.users, mapUser, v => {
           this.users = v;
         }),
-        this.loadCollection(C.doctors, mapDoctor, v => {
-          this.doctors = v;
-        }),
+        this.loadDoctors(),
         this.loadCollection(C.pharmacies, mapPharmacy, v => {
           this.pharmacies = v;
         }),
@@ -881,9 +892,16 @@ export class FirestoreRepo implements Repository {
     }
   }
 
-  // ——— الدليل الطبي ———
+  // ——— الدليل الطبي — التسجيل الذاتي + موافقة الإدارة (v14) ———
   getDoctors(): DoctorEntry[] {
-    return [...this.doctors];
+    // المعتمدون فقط (القديم بلا حالة يُعامل كمعتمد للتوافق)
+    return this.doctors.filter(d => (d.status ?? 'approved') === 'approved');
+  }
+  async getDoctorRequests(): Promise<DoctorEntry[]> {
+    const snap = await getDocs(
+      query(collection(this.db, C.doctors), where('status', '==', 'pending')),
+    );
+    return snap.docs.map(d => mapDoctor(d.id, d.data() as Record<string, unknown>));
   }
   addDoctor(d: Doctor): DoctorEntry {
     const refDoc = doc(collection(this.db, C.doctors));
@@ -898,13 +916,15 @@ export class FirestoreRepo implements Repository {
     const i = this.doctors.findIndex(x => x.id === id);
     if (i >= 0) {
       this.doctors[i] = { ...d, id };
-      this.emit();
-      this.bg(
-        setDoc(doc(this.db, C.doctors, id), clean(d)),
-        `updateDoctor ${id}`,
-      );
-      this.syncImages(C.doctors, this.doctors, id, { photo: 'single' }, 'medical');
+    } else {
+      this.doctors.unshift({ ...d, id });
     }
+    this.emit();
+    this.bg(
+      setDoc(doc(this.db, C.doctors, id), clean(d)),
+      `updateDoctor ${id}`,
+    );
+    this.syncImages(C.doctors, this.doctors, id, { photo: 'single' }, 'medical');
   }
   deleteDoctor(id: string): void {
     this.doctors = this.doctors.filter(x => x.id !== id);

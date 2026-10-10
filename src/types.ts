@@ -184,6 +184,8 @@ export interface Doctor {
   days: string;
   icon: string;
   photo?: string; // صورة — ترفعها الإدارة (v8)
+  status?: 'pending' | 'approved' | 'rejected'; // حالة الطلب — التسجيل الذاتي (v14)
+  ownerUid?: string; // مقدم الطلب
 }
 
 export interface Pharmacy {

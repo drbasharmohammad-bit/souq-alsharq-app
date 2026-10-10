@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import {
   Dimensions,
   FlatList,
+  Image,
   Pressable,
   SafeAreaView,
   StatusBar,
@@ -18,13 +19,15 @@ type Slide = {
   icon: string;
   title: string;
   description: string;
+  image?: any;
 };
 
 const SLIDES: Slide[] = [
   {
-    icon: 'storefront',
+    icon: '',
     title: 'HDR',
-    description: 'سوق المنطقة الشرقية — الحسكة • القامشلي • دير الزور • الرقة',
+    description: 'حسكتك، ديرتك، رقتك... بتطبيق واحد',
+    image: require('../assets/hdr-logo-white.png'),
   },
   {
     icon: 'bullhorn',
@@ -52,9 +55,17 @@ export function OnboardingScreen({ onDone }: { onDone: () => void }) {
 
   const renderSlide = ({ item }: { item: Slide }) => (
     <View style={styles.slide}>
-      <View style={styles.iconCircle}>
-        <AppIcon name={item.icon} size={84} color={colors.gold} />
-      </View>
+      {item.image ? (
+        <Image
+          source={item.image}
+          style={styles.monogram}
+          resizeMode="contain"
+        />
+      ) : (
+        <View style={styles.iconCircle}>
+          <AppIcon name={item.icon} size={84} color={colors.gold} />
+        </View>
+      )}
       <Text style={styles.title}>{item.title}</Text>
       <Text style={styles.description}>{item.description}</Text>
     </View>
@@ -169,6 +180,11 @@ const styles = StyleSheet.create({
     borderColor: colors.gold,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: spacing.xl,
+  },
+  monogram: {
+    width: 200,
+    height: 128,
     marginBottom: spacing.xl,
   },
   title: {

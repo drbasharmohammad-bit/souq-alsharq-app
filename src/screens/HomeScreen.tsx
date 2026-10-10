@@ -247,7 +247,7 @@ export function HomeScreen({ navigation }: Props) {
       style={styles.root}
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}>
-      {/* الهيدر */}
+      {/* الهيدر — المونوغرام وحده في الوسط */}
       <View style={styles.header}>
         <View style={styles.headerDeco}>
           <AppIcon name="store" size={120} color={colors.white} />
@@ -258,9 +258,7 @@ export function HomeScreen({ navigation }: Props) {
             style={styles.monogram}
             resizeMode="contain"
           />
-          <Text style={styles.logo}>HDR</Text>
         </View>
-        <Text style={styles.tagline}>حسكتك، ديرتك، رقتك... بتطبيق واحد</Text>
         <Pressable style={styles.searchBox} onPress={() => navigation.navigate('Search')}>
           <View style={styles.searchRow}>
             <AppIcon name="magnify" size={20} color={colors.primary} />
@@ -380,10 +378,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   headerDeco: { position: 'absolute', left: -24, top: -18, opacity: 0.1 },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  monogram: { width: 64, height: 40 },
-  logo: { fontSize: 32, fontWeight: '800', color: colors.white, letterSpacing: 3 },
-  tagline: { fontSize: fontSize.md, color: colors.white, opacity: 0.92, marginTop: 8, fontWeight: '600' },
+  logoRow: { alignItems: 'center', justifyContent: 'center' },
+  monogram: { width: 120, height: 76 },
   searchBox: {
     backgroundColor: colors.white,
     borderRadius: radius.pill,

@@ -16,6 +16,7 @@ export type RootStackParamList = {
   StoreDetail: { storeId: string };
   AdDetail: { listingId?: string; productId?: string };
   Medical: undefined;
+  DoctorRegister: undefined;
   Search: { q?: string } | undefined;
   // الحسابات — الدخول بحساب جوجل
   GoogleLogin: undefined;

@@ -88,7 +88,7 @@ export class LocalRepo implements Repository {
       createdAt: now,
     }));
     this.stores = [...STORES];
-    this.doctors = DOCTORS.map((d, i) => ({ ...d, id: `doc${i}` }));
+    this.doctors = []; // بلا بذر — الأطباء بالتسجيل الذاتي والموافقة فقط (v14)
     this.pharmacies = PHARMS.map((p, i) => ({ ...p, id: `ph${i}` }));
     this.labs = LABS.map((l, i) => ({ ...l, id: `lab${i}` }));
     // تقييمات تجريبية لأحد المتاجر
@@ -289,9 +289,13 @@ export class LocalRepo implements Repository {
     }
   }
 
-  // ——— الدليل الطبي ———
+  // ——— الدليل الطبي — التسجيل الذاتي + موافقة الإدارة (v14) ———
   getDoctors(): DoctorEntry[] {
-    return [...this.doctors];
+    // المعتمدون فقط
+    return this.doctors.filter(d => (d.status ?? 'approved') === 'approved');
+  }
+  async getDoctorRequests(): Promise<DoctorEntry[]> {
+    return this.doctors.filter(d => d.status === 'pending');
   }
   addDoctor(d: Doctor): DoctorEntry {
     const e = { ...d, id: nid('doc') };
@@ -303,8 +307,10 @@ export class LocalRepo implements Repository {
     const i = this.doctors.findIndex(x => x.id === id);
     if (i >= 0) {
       this.doctors[i] = { ...d, id };
-      this.emit();
+    } else {
+      this.doctors.unshift({ ...d, id });
     }
+    this.emit();
   }
   deleteDoctor(id: string): void {
     this.doctors = this.doctors.filter(x => x.id !== id);

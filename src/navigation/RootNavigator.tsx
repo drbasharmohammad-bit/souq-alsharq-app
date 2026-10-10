@@ -26,6 +26,7 @@ import { GoogleLoginScreen } from '../screens/auth/GoogleLoginScreen';
 import { DetailScreen } from '../screens/DetailScreen';
 import { ListingsScreen } from '../screens/ListingsScreen';
 import { MedicalScreen } from '../screens/MedicalScreen';
+import { DoctorRegisterScreen } from '../screens/DoctorRegisterScreen';
 import { AddProductScreen } from '../screens/merchant/AddProductScreen';
 import { EditStoreScreen } from '../screens/merchant/EditStoreScreen';
 import { FeaturedAdScreen } from '../screens/merchant/FeaturedAdScreen';
@@ -85,6 +86,7 @@ function AppRoot() {
               <Stack.Screen name="AdDetail" component={AdDetailScreen} options={{ headerShown: false }} />
               <Stack.Screen name="StoreDetail" component={StoreDetailScreen} options={{ headerShown: false }} />
               <Stack.Screen name="Medical" component={MedicalScreen} options={{ title: 'القسم الطبي' }} />
+              <Stack.Screen name="DoctorRegister" component={DoctorRegisterScreen} options={{ title: 'سجّل عيادتك' }} />
               <Stack.Screen name="Search" component={SearchScreen} options={{ title: 'البحث' }} />
               {/* الحسابات — الدخول بحساب جوجل */}
               <Stack.Screen name="GoogleLogin" component={GoogleLoginScreen} options={{ title: 'تسجيل الدخول' }} />

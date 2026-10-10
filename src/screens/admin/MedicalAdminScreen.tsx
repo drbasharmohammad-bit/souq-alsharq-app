@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
 import { FormField } from '../../components/FormField';
@@ -37,8 +37,24 @@ export function MedicalAdminScreen() {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // طلبات الأطباء المعلقة (التسجيل الذاتي — v14)
+  const [requests, setRequests] = useState<DoctorEntry[]>([]);
+  const [loadingReq, setLoadingReq] = useState(false);
   const set = (k: keyof FormState, v: string | boolean) =>
     setForm(prev => ({ ...prev, [k]: v } as FormState));
+
+  const loadRequests = async () => {
+    setLoadingReq(true);
+    try {
+      setRequests(await repo.getDoctorRequests());
+    } finally {
+      setLoadingReq(false);
+    }
+  };
+
+  useEffect(() => {
+    if (tab === 'doctors') loadRequests();
+  }, [tab]);
 
   if (!user?.isAdmin) {
     return (
@@ -74,7 +90,9 @@ export function MedicalAdminScreen() {
       );
       const photo = photoUrl || undefined;
       if (tab === 'doctors') {
-        const d: Doctor = { name: form.name.trim(), spec: form.spec.trim(), gov: form.gov, area: form.area.trim() || form.gov, phone: form.phone.trim(), days: form.days.trim() || 'يوميًا', icon: 'doctor', photo };
+        // تعديل طبيب معتمد — نحافظ على الحالة والمالك الأصليين
+        const existing = editingId ? repo.getDoctors().find(x => x.id === editingId) : undefined;
+        const d: Doctor = { name: form.name.trim(), spec: form.spec.trim(), gov: form.gov, area: form.area.trim() || form.gov, phone: form.phone.trim(), days: form.days.trim() || 'يوميًا', icon: 'doctor', photo, status: existing?.status ?? 'approved', ownerUid: existing?.ownerUid };
         if (editingId) repo.updateDoctor(editingId, d);
         else repo.addDoctor(d);
       } else if (tab === 'pharms') {
@@ -135,6 +153,27 @@ export function MedicalAdminScreen() {
     ]);
   };
 
+  const approveRequest = (d: DoctorEntry) => {
+    const { id, ...rest } = d;
+    repo.updateDoctor(id, { ...rest, status: 'approved' });
+    loadRequests();
+  };
+
+  const rejectRequest = (d: DoctorEntry) => {
+    Alert.alert('رفض الطلب', `رفض طلب «${d.name}»؟ لن يظهر في الدليل.`, [
+      { text: 'إلغاء', style: 'cancel' },
+      {
+        text: 'رفض',
+        style: 'destructive',
+        onPress: () => {
+          const { id, ...rest } = d;
+          repo.updateDoctor(id, { ...rest, status: 'rejected' });
+          loadRequests();
+        },
+      },
+    ]);
+  };
+
   const tabs: { k: Tab; t: string; icon: string }[] = [
     { k: 'doctors', t: 'أطباء', icon: 'doctor' },
     { k: 'pharms', t: 'صيدليات', icon: 'pill' },
@@ -169,71 +208,134 @@ export function MedicalAdminScreen() {
         ))}
       </View>
 
-      {/* نموذج الإضافة/التعديل */}
-      <View style={styles.form}>
-        <View style={styles.formTitleRow}>
-          <AppIcon name={editingId ? 'pencil' : 'plus'} size={18} color={colors.text} />
-          <Text style={styles.formTitle}>{editingId ? 'تعديل' : 'إضافة جديد'}</Text>
-        </View>
-        <FormField label={tab === 'doctors' ? 'اسم الطبيب' : tab === 'pharms' ? 'اسم الصيدلية' : 'اسم المخبر'} value={form.name} onChange={v => set('name', v)} required />
-        {tab === 'doctors' && (
-          <FormField label="الاختصاص" value={form.spec} onChange={v => set('spec', v)} placeholder="مثال: قلبية، أطفال، جلدية..." required />
-        )}
-        <SelectChips label="المحافظة" options={GOVS.filter(g => g !== 'الكل')} value={form.gov} onChange={v => set('gov', v)} />
-        <FormField label="العنوان" value={form.area} onChange={v => set('area', v)} placeholder="الحي - الشارع" />
-        <FormField label="الهاتف" value={form.phone} onChange={v => set('phone', v)} keyboardType="phone-pad" required />
-        <ImagePickerField
-          images={form.photo ? [form.photo] : []}
-          onChange={uris => set('photo', uris[0] ?? '')}
-          max={1}
-          label={tab === 'doctors' ? 'صورة الطبيب' : tab === 'pharms' ? 'صورة الصيدلية' : 'صورة المخبر'}
-        />
-        {tab === 'doctors' ? (
-          <FormField label="أوقات الدوام" value={form.days} onChange={v => set('days', v)} placeholder="مثال: السبت - الخميس" />
-        ) : (
-          <FormField label="أوقات العمل" value={form.hours} onChange={v => set('hours', v)} placeholder="مثال: 8 صباحًا - 11 ليلًا" />
-        )}
-        {tab === 'pharms' && (
-          <Pressable style={styles.check} onPress={() => set('night', !form.night)}>
-            <View style={styles.checkRow}>
-              <AppIcon name={form.night ? 'checkbox-marked' : 'checkbox-blank-outline'} size={22} color={colors.primary} />
-              <Text style={styles.checkText}>مناوبة ليلية</Text>
+      {tab === 'doctors' ? (
+        <>
+          {/* طلبات الأطباء المعلقة — التسجيل الذاتي (v14) */}
+          <Text style={styles.listTitle}>طلبات الأطباء المعلقة ({requests.length})</Text>
+          {loadingReq ? (
+            <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.lg }} />
+          ) : requests.length === 0 ? (
+            <View style={styles.emptyBox}>
+              <Text style={styles.emptyText}>لا توجد طلبات معلقة</Text>
             </View>
-          </Pressable>
-        )}
-        {tab === 'labs' && (
-          <FormField label="تحاليل متوفرة" value={form.tests} onChange={v => set('tests', v)} placeholder="مثال: دم شامل، سكري..." />
-        )}
-        <View style={styles.formRow}>
-          <Pressable style={[styles.btn, styles.btnPrimary, saving && styles.btnDisabled]} onPress={save} disabled={saving}>
-            {saving ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <Text style={styles.btnText}>{editingId ? 'حفظ التعديل' : 'إضافة'}</Text>
-            )}
-          </Pressable>
-          {editingId ? (
-            <Pressable style={[styles.btn, styles.btnGhost]} onPress={reset}>
-              <Text style={styles.btnGhostText}>إلغاء</Text>
-            </Pressable>
-          ) : null}
-        </View>
-      </View>
+          ) : (
+            requests.map(d => (
+              <View key={d.id} style={styles.reqCard}>
+                <View style={styles.rowBody}>
+                  <Text style={styles.rowTitle}>{d.name} — {d.spec}</Text>
+                  <Text style={styles.rowMeta}>{d.gov} - {d.area} • {d.phone}</Text>
+                  {d.days ? <Text style={styles.rowMeta}>الدوام: {d.days}</Text> : null}
+                </View>
+                <View style={styles.reqActions}>
+                  <Pressable style={[styles.btn, styles.btnPrimary]} onPress={() => approveRequest(d)}>
+                    <Text style={styles.btnText}>اعتماد</Text>
+                  </Pressable>
+                  <Pressable style={[styles.btn, styles.btnDanger]} onPress={() => rejectRequest(d)}>
+                    <Text style={styles.btnText}>رفض</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))
+          )}
 
-      {/* القوائم */}
-      <Text style={styles.listTitle}>القائمة الحالية</Text>
-      {tab === 'doctors' &&
-        (repo.getDoctors() as DoctorEntry[]).map(d =>
-          renderRow(d.id, `${d.name} — ${d.spec}`, `${d.gov} - ${d.area} • ${d.phone}`),
-        )}
-      {tab === 'pharms' &&
-        (repo.getPharmacies() as PharmacyEntry[]).map(p =>
-          renderRow(p.id, p.name, `${p.gov} - ${p.area} • ${p.hours} • ${p.phone}`),
-        )}
-      {tab === 'labs' &&
-        (repo.getLabs() as LabEntry[]).map(l =>
-          renderRow(l.id, l.name, `${l.gov} - ${l.area} • ${l.hours} • ${l.phone}`),
-        )}
+          {/* الأطباء المعتمدون */}
+          <Text style={styles.listTitle}>الأطباء المعتمدون</Text>
+          {(repo.getDoctors() as DoctorEntry[]).map(d =>
+            renderRow(d.id, `${d.name} — ${d.spec}`, `${d.gov} - ${d.area} • ${d.phone}`),
+          )}
+
+          {/* تعديل طبيب معتمد */}
+          {editingId ? (
+            <View style={styles.form}>
+              <View style={styles.formTitleRow}>
+                <AppIcon name="pencil" size={18} color={colors.text} />
+                <Text style={styles.formTitle}>تعديل بيانات الطبيب</Text>
+              </View>
+              <FormField label="اسم الطبيب" value={form.name} onChange={v => set('name', v)} required />
+              <FormField label="الاختصاص" value={form.spec} onChange={v => set('spec', v)} placeholder="مثال: قلبية، أطفال، جلدية..." required />
+              <SelectChips label="المحافظة" options={GOVS.filter(g => g !== 'الكل')} value={form.gov} onChange={v => set('gov', v)} />
+              <FormField label="العنوان" value={form.area} onChange={v => set('area', v)} placeholder="الحي - الشارع" />
+              <FormField label="الهاتف" value={form.phone} onChange={v => set('phone', v)} keyboardType="phone-pad" required />
+              <ImagePickerField
+                images={form.photo ? [form.photo] : []}
+                onChange={uris => set('photo', uris[0] ?? '')}
+                max={1}
+                label="صورة الطبيب"
+              />
+              <FormField label="أوقات الدوام" value={form.days} onChange={v => set('days', v)} placeholder="مثال: السبت - الخميس" />
+              <View style={styles.formRow}>
+                <Pressable style={[styles.btn, styles.btnPrimary, saving && styles.btnDisabled]} onPress={save} disabled={saving}>
+                  {saving ? (
+                    <ActivityIndicator color={colors.white} />
+                  ) : (
+                    <Text style={styles.btnText}>حفظ التعديل</Text>
+                  )}
+                </Pressable>
+                <Pressable style={[styles.btn, styles.btnGhost]} onPress={reset}>
+                  <Text style={styles.btnGhostText}>إلغاء</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
+        </>
+      ) : (
+        <>
+          {/* نموذج الإضافة/التعديل — الصيدليات والمخابر */}
+          <View style={styles.form}>
+            <View style={styles.formTitleRow}>
+              <AppIcon name={editingId ? 'pencil' : 'plus'} size={18} color={colors.text} />
+              <Text style={styles.formTitle}>{editingId ? 'تعديل' : 'إضافة جديد'}</Text>
+            </View>
+            <FormField label={tab === 'pharms' ? 'اسم الصيدلية' : 'اسم المخبر'} value={form.name} onChange={v => set('name', v)} required />
+            <SelectChips label="المحافظة" options={GOVS.filter(g => g !== 'الكل')} value={form.gov} onChange={v => set('gov', v)} />
+            <FormField label="العنوان" value={form.area} onChange={v => set('area', v)} placeholder="الحي - الشارع" />
+            <FormField label="الهاتف" value={form.phone} onChange={v => set('phone', v)} keyboardType="phone-pad" required />
+            <ImagePickerField
+              images={form.photo ? [form.photo] : []}
+              onChange={uris => set('photo', uris[0] ?? '')}
+              max={1}
+              label={tab === 'pharms' ? 'صورة الصيدلية' : 'صورة المخبر'}
+            />
+            <FormField label="أوقات العمل" value={form.hours} onChange={v => set('hours', v)} placeholder="مثال: 8 صباحًا - 11 ليلًا" />
+            {tab === 'pharms' && (
+              <Pressable style={styles.check} onPress={() => set('night', !form.night)}>
+                <View style={styles.checkRow}>
+                  <AppIcon name={form.night ? 'checkbox-marked' : 'checkbox-blank-outline'} size={22} color={colors.primary} />
+                  <Text style={styles.checkText}>مناوبة ليلية</Text>
+                </View>
+              </Pressable>
+            )}
+            {tab === 'labs' && (
+              <FormField label="تحاليل متوفرة" value={form.tests} onChange={v => set('tests', v)} placeholder="مثال: دم شامل، سكري..." />
+            )}
+            <View style={styles.formRow}>
+              <Pressable style={[styles.btn, styles.btnPrimary, saving && styles.btnDisabled]} onPress={save} disabled={saving}>
+                {saving ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.btnText}>{editingId ? 'حفظ التعديل' : 'إضافة'}</Text>
+                )}
+              </Pressable>
+              {editingId ? (
+                <Pressable style={[styles.btn, styles.btnGhost]} onPress={reset}>
+                  <Text style={styles.btnGhostText}>إلغاء</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+
+          {/* القوائم */}
+          <Text style={styles.listTitle}>القائمة الحالية</Text>
+          {tab === 'pharms' &&
+            (repo.getPharmacies() as PharmacyEntry[]).map(p =>
+              renderRow(p.id, p.name, `${p.gov} - ${p.area} • ${p.hours} • ${p.phone}`),
+            )}
+          {tab === 'labs' &&
+            (repo.getLabs() as LabEntry[]).map(l =>
+              renderRow(l.id, l.name, `${l.gov} - ${l.area} • ${l.hours} • ${l.phone}`),
+            )}
+        </>
+      )}
     </ScrollView>
   );
 }
@@ -253,6 +355,7 @@ const styles = StyleSheet.create({
   formRow: { flexDirection: 'row', gap: spacing.md },
   btn: { flex: 1, borderRadius: radius.md, padding: spacing.md, alignItems: 'center' },
   btnPrimary: { backgroundColor: colors.primary },
+  btnDanger: { backgroundColor: colors.danger },
   btnDisabled: { opacity: 0.7 },
   btnGhost: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
   btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
@@ -266,6 +369,10 @@ const styles = StyleSheet.create({
   miniDel: { backgroundColor: '#FBE9E7' },
   deniedWrap: { alignItems: 'center', marginTop: 80, gap: 8 },
   denied: { textAlign: 'center', fontSize: fontSize.lg, color: colors.danger, fontWeight: '700' },
+  reqCard: { backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.primary, borderStartWidth: 4 },
+  reqActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
+  emptyBox: { backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.lg, alignItems: 'center', marginBottom: spacing.sm },
+  emptyText: { color: colors.textMuted, fontSize: fontSize.md },
   tabRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   formTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: spacing.md },
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

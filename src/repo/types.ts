@@ -83,8 +83,9 @@ export interface Repository {
   linkStoreToUser(phone: string, storeId: string): void;
   setUserBlocked(id: string, blocked: boolean): void;
 
-  // الدليل الطبي (إدارة حصرًا)
-  getDoctors(): DoctorEntry[];
+  // الدليل الطبي — التسجيل الذاتي + موافقة الإدارة (v14)
+  getDoctors(): DoctorEntry[]; // المعتمدون فقط
+  getDoctorRequests(): Promise<DoctorEntry[]>; // الطلبات المعلقة — للإدارة
   addDoctor(d: Doctor): DoctorEntry;
   updateDoctor(id: string, d: Doctor): void;
   deleteDoctor(id: string): void;

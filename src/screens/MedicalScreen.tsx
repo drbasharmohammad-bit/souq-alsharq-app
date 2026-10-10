@@ -1,16 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppIcon } from '../components/AppIcon';
 import { GovChips } from '../components/GovChips';
 import { PlaceholderImage } from '../components/PlaceholderImage';
 import { RemoteImage } from '../components/RemoteImage';
 import { GOVS } from '../data';
+import { RootStackParamList } from '../navigation/types';
 import { useRepo } from '../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../theme';
 
 type Tab = 'doctors' | 'pharms' | 'labs';
 
-export function MedicalScreen() {
+type Props = NativeStackScreenProps<RootStackParamList, 'Medical'>;
+
+export function MedicalScreen({ navigation }: Props) {
   const repo = useRepo();
   const [tab, setTab] = useState<Tab>('doctors');
   const [gov, setGov] = useState('الكل');
@@ -67,6 +71,15 @@ export function MedicalScreen() {
         </View>
       </View>
 
+      {tab === 'doctors' && (
+        <Pressable
+          style={styles.registerBtn}
+          onPress={() => navigation.navigate('DoctorRegister')}>
+          <AppIcon name="doctor" size={20} color={colors.primary} />
+          <Text style={styles.registerText}>أنت طبيب؟ سجّل عيادتك</Text>
+        </Pressable>
+      )}
+
       {/* التبويبات */}
       <View style={styles.tabs}>
         {(
@@ -97,6 +110,19 @@ export function MedicalScreen() {
           contentContainerStyle={styles.list}
           initialNumToRender={8}
           maxToRenderPerBatch={8}
+          ListEmptyComponent={
+            <View style={styles.emptyBox}>
+              <AppIcon name="doctor" size={44} color={colors.textMuted} />
+              <Text style={styles.emptyText}>
+                لا يوجد أطباء معتمدون بعد — كن أول من يسجّل عيادته
+              </Text>
+              <Pressable
+                style={styles.registerBtn}
+                onPress={() => navigation.navigate('DoctorRegister')}>
+                <Text style={styles.registerText}>سجّل عيادتك</Text>
+              </Pressable>
+            </View>
+          }
           renderItem={({ item }) => (
             <View style={styles.card}>
               {avatar(item.photo, 'doctor', colors.info)}
@@ -193,6 +219,22 @@ const styles = StyleSheet.create({
   trust: { backgroundColor: colors.verifiedBg, margin: spacing.md, borderRadius: radius.md, padding: spacing.md },
   trustRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   trustText: { color: colors.verifiedText, fontSize: fontSize.sm, fontWeight: '700', textAlign: 'center', flex: 1 },
+  registerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    backgroundColor: colors.card,
+  },
+  registerText: { color: colors.primary, fontSize: fontSize.md, fontWeight: '800' },
+  emptyBox: { alignItems: 'center', padding: spacing.xl, gap: 10 },
+  emptyText: { color: colors.textMuted, fontSize: fontSize.md, textAlign: 'center', lineHeight: 24 },
   tabs: { flexDirection: 'row', paddingHorizontal: spacing.md, gap: spacing.sm },
   tab: { flex: 1, backgroundColor: colors.card, borderRadius: radius.pill, padding: spacing.sm, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
   tabActive: { backgroundColor: colors.info, borderColor: colors.info },
