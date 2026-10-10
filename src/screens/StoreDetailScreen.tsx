@@ -110,17 +110,31 @@ export function StoreDetailScreen({ navigation, route }: Props) {
 
   return (
     <ScrollView style={styles.root} showsVerticalScrollIndicator={false}>
-      {/* الغلاف — ترويسة سينمائية */}
-      {store.coverImage ? (
-        <View style={styles.coverImgWrap}>
-          <RemoteImage uri={store.coverImage} style={styles.coverImg} />
-          <View style={styles.coverShade} />
-          <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={8}>
-            <AppIcon name="arrow-right" size={20} color={colors.primary} />
-          </Pressable>
-          <View style={styles.coverCaption}>
-            <Text style={styles.coverStoreName} numberOfLines={1}>{store.name}</Text>
-            <View style={styles.coverBadges}>
+      {/* ترويسة المتجر — الشعار كبيرًا في الوسط */}
+      <View style={[styles.hero, { backgroundColor: store.g1 }]}>
+        <View style={styles.heroShade} />
+        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={8}>
+          <AppIcon name="arrow-right" size={20} color={colors.primary} />
+        </Pressable>
+        <View style={styles.heroContent}>
+          {store.logoImage ? (
+            <RemoteImage
+              uri={store.logoImage}
+              style={styles.heroLogo}
+              fallback={
+                <View style={styles.heroLogoPh}>
+                  <Text style={styles.heroLogoText}>{store.name.charAt(0)}</Text>
+                </View>
+              }
+            />
+          ) : (
+            <View style={styles.heroLogoPh}>
+              <Text style={styles.heroLogoText}>{store.name.charAt(0)}</Text>
+            </View>
+          )}
+          <Text style={styles.heroName} numberOfLines={2}>{store.name}</Text>
+          {(store.verified || store.featured) && (
+            <View style={styles.heroBadges}>
               {store.verified && (
                 <View style={styles.vbadge}>
                   <AppIcon name="check-circle" size={13} color={colors.white} />
@@ -134,59 +148,13 @@ export function StoreDetailScreen({ navigation, route }: Props) {
                 </View>
               )}
             </View>
+          )}
+          <View style={styles.heroRating}>
+            <Stars value={avg} />
+            <Text style={styles.heroRatingText}>
+              {reviews.length > 0 ? `${avg.toFixed(1)} (${reviews.length} تقييم)` : 'لا تقييمات بعد'}
+            </Text>
           </View>
-        </View>
-      ) : (
-        <View style={[styles.cover, { backgroundColor: store.g1 }]}>
-          <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={8}>
-            <AppIcon name="arrow-right" size={20} color={colors.primary} />
-          </Pressable>
-          <Text style={styles.coverName}>{store.name}</Text>
-        </View>
-      )}
-
-      <View style={styles.head}>
-        {store.logoImage ? (
-          <RemoteImage
-            uri={store.logoImage}
-            style={styles.logoImg}
-            fallback={
-              <View style={[styles.logo, { backgroundColor: colors.gold }]}>
-                <Text style={styles.logoText}>{store.name.charAt(0)}</Text>
-              </View>
-            }
-          />
-        ) : (
-          <View style={[styles.logo, { backgroundColor: colors.gold }]}>
-            <Text style={styles.logoText}>{store.name.charAt(0)}</Text>
-          </View>
-        )}
-        {!store.coverImage && (
-          <>
-            <View style={styles.nameRow}>
-              <Text style={styles.name}>{store.name}</Text>
-            </View>
-            <View style={styles.badgesRow}>
-              {store.verified && (
-                <View style={styles.vbadge}>
-                  <AppIcon name="check-circle" size={13} color={colors.white} />
-                  <Text style={styles.badgeText}>موثق</Text>
-                </View>
-              )}
-              {store.featured && (
-                <View style={styles.fbadge}>
-                  <AppIcon name="star" size={13} color={colors.white} />
-                  <Text style={styles.badgeText}>مميز</Text>
-                </View>
-              )}
-            </View>
-          </>
-        )}
-        <View style={styles.ratingRow}>
-          <Stars value={avg} />
-          <Text style={styles.ratingText}>
-            {reviews.length > 0 ? `${avg.toFixed(1)} (${reviews.length} تقييم)` : 'لا تقييمات بعد'}
-          </Text>
         </View>
       </View>
 
@@ -414,34 +382,33 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: colors.background },
   empty: { textAlign: 'center', color: colors.textMuted, fontSize: fontSize.md, marginTop: 8 },
-  cover: { height: 200, alignItems: 'center', justifyContent: 'center' },
-  coverName: { color: colors.white, fontSize: 26, fontWeight: '800', textShadowColor: 'rgba(0,0,0,0.3)', textShadowRadius: 8 },
-  coverImgWrap: { height: 260 },
-  coverImg: { width: '100%', height: 260 },
-  coverShade: {
-    position: 'absolute', bottom: 0, left: 0, right: 0, height: 130,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+  hero: { paddingTop: 60, paddingBottom: spacing.xl, overflow: 'hidden' },
+  heroShade: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.16)',
   },
-  coverCaption: { position: 'absolute', bottom: 14, right: 16, left: 16 },
-  coverStoreName: {
-    color: colors.white, fontSize: 26, fontWeight: '800',
-    textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 10,
+  heroContent: { alignItems: 'center', paddingHorizontal: spacing.lg },
+  heroLogo: {
+    width: 96, height: 96, borderRadius: 48,
+    borderWidth: 4, borderColor: colors.white, elevation: 5,
+    backgroundColor: colors.border,
   },
-  coverBadges: { flexDirection: 'row', gap: 6, marginTop: 8 },
+  heroLogoPh: {
+    width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 4, borderColor: colors.white, elevation: 5, backgroundColor: colors.gold,
+  },
+  heroLogoText: { color: colors.white, fontSize: 40, fontWeight: '800' },
+  heroName: {
+    color: colors.white, fontSize: 24, fontWeight: '800', textAlign: 'center',
+    marginTop: spacing.md, textShadowColor: 'rgba(0,0,0,0.3)', textShadowRadius: 8,
+  },
+  heroBadges: { flexDirection: 'row', gap: 6, marginTop: spacing.sm, justifyContent: 'center' },
+  heroRating: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: spacing.sm },
+  heroRatingText: { fontSize: fontSize.sm, color: 'rgba(255,255,255,0.9)' },
   backBtn: {
     position: 'absolute', top: 50, right: 14, width: 36, height: 36, borderRadius: 18,
     backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', elevation: 2,
-  },
-  head: { paddingHorizontal: spacing.lg, marginTop: -42 },
-  logo: {
-    width: 84, height: 84, borderRadius: 42, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 4, borderColor: colors.white, elevation: 4,
-  },
-  logoText: { color: colors.white, fontSize: 34, fontWeight: '800' },
-  logoImg: {
-    width: 84, height: 84, borderRadius: 42,
-    borderWidth: 4, borderColor: colors.white, elevation: 4,
-    backgroundColor: colors.border,
+    zIndex: 2,
   },
   chipsRow: { marginBottom: spacing.sm },
   chipsContent: { flexDirection: 'row', gap: 8, paddingBottom: 2 },
@@ -452,14 +419,9 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.primary },
   chipText: { fontSize: fontSize.sm, fontWeight: '700', color: colors.primary },
   chipTextActive: { color: colors.white },
-  nameRow: { marginTop: 8 },
-  name: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text },
-  badgesRow: { flexDirection: 'row', gap: 6, marginTop: 6 },
   vbadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.primary, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
   fbadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.gold, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
   badgeText: { color: colors.white, fontSize: fontSize.xs, fontWeight: '700' },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  ratingText: { fontSize: fontSize.sm, color: colors.textMuted },
   infoRows: { paddingHorizontal: spacing.lg, marginTop: spacing.md },
   irow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border },
   iicon: { width: 32, height: 32, borderRadius: 10, backgroundColor: colors.primary + '14', alignItems: 'center', justifyContent: 'center' },

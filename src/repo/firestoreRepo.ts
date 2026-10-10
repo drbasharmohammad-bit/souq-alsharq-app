@@ -670,13 +670,9 @@ export class FirestoreRepo implements Repository {
     // فصل حقول الصور عن النصوص: Firestore لا يستقبل أبدًا URI محليًا
     // (file://) — الكاش وحده يعرض الصورة المختارة فورًا على هذا الجهاز،
     // وروابط https تُكتب في Firestore فورًا، والمحلية تُرفع بالخلفية.
-    const {
-      id: _id,
-      ownerUid: _ou,
-      coverImage,
-      logoImage,
-      ...textPatch
-    } = patch;
+    // ملاحظة: الغلاف (coverImage) أُلغي من الواجهة بقرار الإدارة — يبقى
+    // الحقل في البيانات القديمة بصمت دون عرض أو تعديل.
+    const { id: _id, ownerUid: _ou, logoImage, ...textPatch } = patch;
     Object.assign(s, textPatch);
     this.emit();
     // id وownerUid لا يُكتبان — الملكية ثابتة
@@ -687,27 +683,16 @@ export class FirestoreRepo implements Repository {
         `updateStore ${id}`,
       );
     }
-    if (coverImage !== undefined || logoImage !== undefined) {
-      if (coverImage !== undefined) s.coverImage = coverImage;
-      if (logoImage !== undefined) s.logoImage = logoImage;
+    if (logoImage !== undefined) {
+      s.logoImage = logoImage;
       this.emit();
-      const imgPatch: Partial<Store> = {};
-      if (coverImage !== undefined && !isLocalUri(coverImage)) {
-        imgPatch.coverImage = coverImage;
-      }
-      if (logoImage !== undefined && !isLocalUri(logoImage)) {
-        imgPatch.logoImage = logoImage;
-      }
-      if (Object.keys(imgPatch).length > 0) {
+      if (!isLocalUri(logoImage)) {
         this.bg(
-          updateDoc(doc(this.db, C.stores, id), clean(imgPatch)),
+          updateDoc(doc(this.db, C.stores, id), clean({ logoImage })),
           `updateStore images ${id}`,
         );
       }
-      const fields: Partial<Record<'coverImage' | 'logoImage', 'single'>> = {};
-      if (coverImage !== undefined) fields.coverImage = 'single';
-      if (logoImage !== undefined) fields.logoImage = 'single';
-      this.syncImages(C.stores, this.stores, id, fields, 'stores');
+      this.syncImages(C.stores, this.stores, id, { logoImage: 'single' }, 'stores');
     }
   }
 

@@ -19,7 +19,7 @@ import { colors, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EditStore'>;
 
-// تعديل بيانات المتجر للتاجر: الاسم، الوصف، الدوام، الهاتف، المنطقة، الغلاف والشعار
+// تعديل بيانات المتجر للتاجر: الاسم، الوصف، الدوام، الهاتف، المنطقة، والشعار
 export function EditStoreScreen({ navigation }: Props) {
   const repo = useRepo();
   const store = useMyStore();
@@ -28,9 +28,6 @@ export function EditStoreScreen({ navigation }: Props) {
   const [hours, setHours] = useState(store?.hours ?? '');
   const [phone, setPhone] = useState(store?.phone ?? '');
   const [area, setArea] = useState(store?.area ?? '');
-  const [cover, setCover] = useState<string[]>(
-    store?.coverImage ? [store.coverImage] : [],
-  );
   const [logo, setLogo] = useState<string[]>(
     store?.logoImage ? [store.logoImage] : [],
   );
@@ -52,20 +49,16 @@ export function EditStoreScreen({ navigation }: Props) {
     }
     setSaving(true);
     try {
-      // 1) رفع الصور المحلية إلى Cloudinary أولًا مع الانتظار الحقيقي —
+      // 1) رفع الشعار المحلي إلى Cloudinary أولًا مع الانتظار الحقيقي —
       //    لا يُكتب أي URI محلي في Firestore أبدًا.
-      const [coverUrl, logoUrl] = await repo.uploadImages(
-        [cover[0] ?? '', logo[0] ?? ''],
-        'stores',
-      );
-      // 2) حفظ النصوص + روابط https النهائية
+      const [logoUrl] = await repo.uploadImages([logo[0] ?? ''], 'stores');
+      // 2) حفظ النصوص + رابط https النهائي
       repo.updateStore(store.id, {
         name: name.trim(),
         description: desc.trim(),
         hours: hours.trim(),
         phone: phone.trim(),
         area: area.trim() || store.area,
-        coverImage: coverUrl,
         logoImage: logoUrl,
       });
       Alert.alert('تم الحفظ', 'تم تحديث بيانات متجرك بنجاح', [
@@ -74,7 +67,7 @@ export function EditStoreScreen({ navigation }: Props) {
     } catch {
       Alert.alert(
         'تعذر الحفظ',
-        'فشل رفع الصور إلى الخادم — تحقق من اتصال الإنترنت وحاول مجددًا.',
+        'فشل رفع الشعار إلى الخادم — تحقق من اتصال الإنترنت وحاول مجددًا.',
       );
     } finally {
       setSaving(false);
@@ -89,13 +82,6 @@ export function EditStoreScreen({ navigation }: Props) {
       </View>
       <Text style={styles.sub}>بيانات متجرك كما ستظهر للزبائن</Text>
 
-      <ImagePickerField
-        images={cover}
-        onChange={setCover}
-        max={1}
-        label="صورة الغلاف"
-      />
-      <Text style={styles.imgHint}>يُفضّل صورة عريضة (16:9) — صورة واجهة المحل أو أطباقه</Text>
       <ImagePickerField images={logo} onChange={setLogo} max={1} label="شعار المتجر" />
       <Text style={styles.imgHint}>صورة مربعة (شعار المحل)</Text>
 
