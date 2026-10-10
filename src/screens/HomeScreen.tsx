@@ -249,14 +249,19 @@ export function HomeScreen({ navigation }: Props) {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}>
       {/* الهيدر */}
       <View style={styles.header}>
+        <View style={styles.headerDeco}>
+          <AppIcon name="store" size={120} color={colors.white} />
+        </View>
         <View style={styles.logoRow}>
-          <AppIcon name="store" size={30} color={colors.white} />
+          <View style={styles.logoBadge}>
+            <AppIcon name="store" size={26} color={colors.primary} />
+          </View>
           <Text style={styles.logo}>HDR</Text>
         </View>
-        <Text style={styles.tagline}>إعلانات الجزيرة والفرات</Text>
+        <Text style={styles.tagline}>حسكتك، ديرتك، رقتك... بتطبيق واحد</Text>
         <Pressable style={styles.searchBox} onPress={() => navigation.navigate('Search')}>
           <View style={styles.searchRow}>
-            <AppIcon name="magnify" size={18} color={colors.textMuted} />
+            <AppIcon name="magnify" size={20} color={colors.primary} />
             <Text style={styles.searchHint}>ابحث عن سيارة، شقة، طبيب...</Text>
           </View>
         </Pressable>
@@ -306,7 +311,10 @@ export function HomeScreen({ navigation }: Props) {
       </View>
 
       {/* بطاقات الأقسام */}
-      <Text style={styles.secTitlePlain}>الأقسام</Text>
+      <View style={styles.secTitleRow}>
+        <View style={styles.secAccent} />
+        <Text style={styles.secTitle}>الأقسام</Text>
+      </View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -325,8 +333,9 @@ export function HomeScreen({ navigation }: Props) {
 
       {/* المتاجر المميزة */}
       <View style={styles.secTitleRow}>
-        <AppIcon name="star" size={20} color={colors.gold} />
+        <View style={styles.secAccent} />
         <Text style={styles.secTitle}>متاجر مميزة</Text>
+        <AppIcon name="star" size={20} color={colors.gold} />
       </View>
       {stores.length > 0 ? (
         <ScrollView
@@ -341,8 +350,9 @@ export function HomeScreen({ navigation }: Props) {
 
       {/* إعلانات مميزة */}
       <View style={styles.secTitleRow}>
-        <AppIcon name="tag" size={20} color={colors.gold} />
+        <View style={styles.secAccent} />
         <Text style={styles.secTitle}>إعلانات مميزة</Text>
+        <AppIcon name="tag" size={20} color={colors.gold} />
       </View>
       {featured.length > 0 ? (
         <View style={styles.adGrid}>
@@ -358,18 +368,38 @@ export function HomeScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  header: { backgroundColor: colors.primary, padding: spacing.lg, paddingBottom: spacing.md },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logo: { fontSize: fontSize.xxl, fontWeight: '800', color: colors.white },
-  tagline: { fontSize: fontSize.sm, color: colors.goldLight, marginTop: 2 },
+  header: {
+    backgroundColor: colors.primary,
+    padding: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
+    borderBottomLeftRadius: radius.lg,
+    borderBottomRightRadius: radius.lg,
+    overflow: 'hidden',
+  },
+  headerDeco: { position: 'absolute', left: -24, top: -18, opacity: 0.1 },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  logoBadge: {
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center',
+    elevation: 2,
+  },
+  logo: { fontSize: 32, fontWeight: '800', color: colors.white, letterSpacing: 3 },
+  tagline: { fontSize: fontSize.md, color: colors.white, opacity: 0.92, marginTop: 8, fontWeight: '600' },
   searchBox: {
     backgroundColor: colors.white,
     borderRadius: radius.pill,
     padding: spacing.md,
+    paddingHorizontal: spacing.lg,
     marginTop: spacing.md,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  searchHint: { color: colors.textMuted, fontSize: fontSize.sm, flex: 1 },
+  searchHint: { color: colors.textMuted, fontSize: fontSize.md, flex: 1 },
   bannerWrap: { marginTop: spacing.md },
   page: { width: PAGE },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: spacing.sm },
@@ -416,28 +446,33 @@ const styles = StyleSheet.create({
   },
   bannerTitle: { fontSize: fontSize.xl, fontWeight: '800', color: colors.white, marginTop: spacing.sm },
   bannerSub: { fontSize: fontSize.sm, color: colors.white, opacity: 0.9, marginTop: 4 },
-  secTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, margin: spacing.md, marginBottom: spacing.sm },
-  secTitle: { fontSize: fontSize.lg, fontWeight: '800', color: colors.text },
-  secTitlePlain: { fontSize: fontSize.lg, fontWeight: '800', color: colors.text, margin: spacing.md, marginBottom: spacing.sm },
+  secTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, margin: spacing.md, marginBottom: spacing.sm, marginTop: spacing.lg },
+  secAccent: { width: 5, height: 24, borderRadius: 3, backgroundColor: colors.primary },
+  secTitle: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text, flex: 1 },
+  secTitlePlain: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text, margin: spacing.md, marginBottom: spacing.sm, marginTop: spacing.lg },
   // بطاقات الأقسام
   sectionList: { paddingHorizontal: spacing.md, gap: spacing.sm },
   sectionCard: {
     width: SECTION_CARD_W,
     backgroundColor: colors.card,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     alignItems: 'center',
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
-    elevation: 1,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
   },
   sectionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sectionName: { fontSize: fontSize.xs, fontWeight: '700', color: colors.text, marginTop: 6, textAlign: 'center' },
+  sectionName: { fontSize: fontSize.sm, fontWeight: '800', color: colors.text, marginTop: 8, textAlign: 'center' },
   // بطاقات المتاجر المميزة
   storeList: { paddingHorizontal: spacing.md, gap: spacing.md },
   storeCard: {
@@ -445,21 +480,25 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: radius.lg,
     overflow: 'hidden',
-    elevation: 1,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
   },
   storeImgWrap: {
-    height: 110,
+    height: 118,
     alignItems: 'center',
     justifyContent: 'center',
   },
   // الشعار المرفوع: دائري متداخل بنفس بصمة الـplaceholder
   storeLogo: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    borderWidth: 3,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    borderWidth: 4,
     borderColor: colors.white,
-    elevation: 2,
+    elevation: 3,
   },
   storeBadge: {
     position: 'absolute',
@@ -470,13 +509,14 @@ const styles = StyleSheet.create({
     gap: 3,
     backgroundColor: colors.gold,
     borderRadius: radius.pill,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    elevation: 2,
   },
   storeBadgeText: { color: colors.white, fontSize: fontSize.xs, fontWeight: '800' },
-  storeBody: { padding: spacing.sm },
-  storeName: { fontSize: fontSize.sm, fontWeight: '800', color: colors.text },
-  storeMeta: { fontSize: fontSize.xs, color: colors.textMuted, marginTop: 2 },
+  storeBody: { padding: spacing.md },
+  storeName: { fontSize: fontSize.md, fontWeight: '800', color: colors.text },
+  storeMeta: { fontSize: fontSize.xs, color: colors.textMuted, marginTop: 3 },
   // شبكة الإعلانات المميزة
   adGrid: {
     flexDirection: 'row',
@@ -489,10 +529,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: radius.lg,
     overflow: 'hidden',
-    elevation: 1,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.09,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
   },
   adImgWrap: {
-    height: 120,
+    height: 128,
     alignItems: 'center',
     justifyContent: 'center',
   },

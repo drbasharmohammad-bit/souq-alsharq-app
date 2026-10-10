@@ -5,6 +5,7 @@ export type TabsParamList = {
   Sections: undefined;
   Favorites: undefined;
   Account: undefined;
+  AdminTab: undefined;
 };
 
 export type RootStackParamList = {
@@ -33,6 +34,8 @@ export type RootStackParamList = {
   // المرحلة 2: الاشتراك والإدارة
   Subscription: undefined;
   Admin: undefined;
+  AdminDashboard: undefined;
+  AdminStores: undefined;
   AdminReview: undefined;
   AdminMedical: undefined;
   AdminSubs: undefined;

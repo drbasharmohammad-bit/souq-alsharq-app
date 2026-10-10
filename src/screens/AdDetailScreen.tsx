@@ -9,9 +9,11 @@ import {
   StyleSheet,
   Text,
   View,
+  Alert,
 } from 'react-native';
 import { AppIcon } from '../components/AppIcon';
 import { RemoteImage } from '../components/RemoteImage';
+import { useAuth } from '../context/AuthContext';
 import { useFavorites } from '../context/FavoritesContext';
 import { useGov } from '../context/GovContext';
 import { formatPrice, sectionName } from '../data';
@@ -28,6 +30,7 @@ const W = Dimensions.get('window').width;
 export function AdDetailScreen({ navigation, route }: Props) {
   const repo = useRepo();
   const { gov } = useGov();
+  const { user } = useAuth();
   const { toggle, isFav } = useFavorites();
   const [page, setPage] = useState(0);
   const [fullImg, setFullImg] = useState<string | null>(null);
@@ -147,7 +150,9 @@ export function AdDetailScreen({ navigation, route }: Props) {
       )}
 
       <View style={styles.body}>
-        <Text style={styles.price}>{formatPrice(price, priceNote)}</Text>
+        <View style={styles.priceRow}>
+          <Text style={styles.price}>{formatPrice(price, priceNote)}</Text>
+        </View>
         <Text style={styles.title}>{title}</Text>
         <View style={styles.metaRow}>
           <AppIcon name="map-marker" size={14} color={colors.textMuted} />
@@ -211,9 +216,9 @@ export function AdDetailScreen({ navigation, route }: Props) {
         </View>
         <View style={styles.sellerBtns}>
           {store && (
-            <Pressable style={[styles.sbtn, styles.sbtnPrimary]} onPress={goStore}>
-              <AppIcon name="store" size={16} color={colors.white} />
-              <Text style={styles.sbtnPrimaryText}>زيارة المتجر</Text>
+            <Pressable style={[styles.sbtn, styles.sbtnGhost]} onPress={goStore}>
+              <AppIcon name="store" size={16} color={colors.primary} />
+              <Text style={styles.sbtnGhostText}>زيارة المتجر</Text>
             </Pressable>
           )}
           {listing && (
@@ -223,11 +228,56 @@ export function AdDetailScreen({ navigation, route }: Props) {
               <Text style={styles.sbtnGhostText}>كل الإعلانات</Text>
             </Pressable>
           )}
-          <Pressable style={[styles.sbtn, styles.sbtnPrimary]} onPress={() => call(sellerPhone)}>
-            <AppIcon name="phone" size={16} color={colors.white} />
-            <Text style={styles.sbtnPrimaryText}>اتصال</Text>
-          </Pressable>
         </View>
+        <Pressable style={styles.callCta} onPress={() => call(sellerPhone)}>
+          <AppIcon name="phone" size={22} color={colors.white} />
+          <Text style={styles.callCtaText}>اتصال بالبائع</Text>
+        </Pressable>
+
+        {/* صلاحيات المدير على الإعلان */}
+        {listing && user?.isAdmin && (
+          <View style={styles.adminBox}>
+            <View style={styles.adminTitleRow}>
+              <AppIcon name="shield-account" size={16} color={colors.primary} />
+              <Text style={styles.adminTitle}>إجراءات المدير</Text>
+              <Text style={styles.adminStatus}>
+                الحالة: {listing.status === 'approved' ? 'معتمد' : listing.status === 'pending' ? 'بانتظار المراجعة' : 'مخفي'}
+              </Text>
+            </View>
+            <View style={styles.adminBtns}>
+              <Pressable
+                style={[styles.abtn, styles.abtnOk]}
+                onPress={() => repo.updateListingStatus(listing.id, 'approved')}>
+                <AppIcon name="check" size={15} color={colors.white} />
+                <Text style={styles.abtnText}>اعتماد</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.abtn, styles.abtnHide]}
+                onPress={() => repo.updateListingStatus(listing.id, 'rejected')}>
+                <AppIcon name="eye-off" size={15} color={colors.white} />
+                <Text style={styles.abtnText}>إخفاء</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.abtn, styles.abtnDel]}
+                onPress={() =>
+                  Alert.alert('حذف الإعلان', `سيُحذف «${listing.name}» نهائيًا. متابعة؟`, [
+                    { text: 'إلغاء', style: 'cancel' },
+                    {
+                      text: 'حذف',
+                      style: 'destructive',
+                      onPress: () => {
+                        repo.deleteListing(listing.id);
+                        navigation.goBack();
+                      },
+                    },
+                  ])
+                }>
+                <AppIcon name="delete" size={15} color={colors.white} />
+                <Text style={styles.abtnText}>حذف</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
 
         {/* إعلانات مشابهة */}
         {similar.length > 0 && (
@@ -293,13 +343,13 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: colors.background },
   empty: { color: colors.textMuted, fontSize: fontSize.md },
-  gimg: { width: W, height: 280 },
+  gimg: { width: W, height: 320 },
   countBadge: {
-    position: 'absolute', bottom: 12, left: 12, backgroundColor: 'rgba(0,0,0,0.6)',
+    position: 'absolute', bottom: 26, left: 12, backgroundColor: 'rgba(0,0,0,0.6)',
     borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 4,
   },
   countText: { color: colors.white, fontSize: fontSize.sm, fontWeight: '700' },
-  noimg: { height: 220, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.border },
+  noimg: { height: 260, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.border },
   backBtn: {
     position: 'absolute', top: 50, right: 14, width: 36, height: 36, borderRadius: 18,
     backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', elevation: 2,
@@ -309,8 +359,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', elevation: 2,
   },
   body: { padding: spacing.lg, backgroundColor: colors.white, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, marginTop: -spacing.lg },
-  price: { fontSize: 28, fontWeight: '800', color: colors.primary },
-  title: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text, marginTop: 6 },
+  priceRow: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.primary + '14',
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  price: { fontSize: 30, fontWeight: '800', color: colors.primary },
+  title: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text, marginTop: 8 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 },
   meta: { fontSize: fontSize.sm, color: colors.textMuted, flex: 1 },
   warn: { backgroundColor: '#FFF8E6', borderWidth: 1, borderColor: colors.gold, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.md },
@@ -333,8 +390,32 @@ const styles = StyleSheet.create({
   sbtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: radius.md, padding: spacing.sm },
   sbtnPrimary: { backgroundColor: colors.primary },
   sbtnPrimaryText: { color: colors.white, fontWeight: '800', fontSize: fontSize.sm },
-  sbtnGhost: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
-  sbtnGhostText: { color: colors.text, fontWeight: '700', fontSize: fontSize.sm },
+  sbtnGhost: { backgroundColor: colors.white, borderWidth: 1.5, borderColor: colors.primary },
+  sbtnGhostText: { color: colors.primary, fontWeight: '800', fontSize: fontSize.sm },
+  callCta: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    backgroundColor: colors.primary, borderRadius: radius.lg,
+    paddingVertical: spacing.md, marginTop: spacing.md,
+    elevation: 4, shadowColor: colors.primary, shadowOpacity: 0.3,
+    shadowRadius: 8, shadowOffset: { width: 0, height: 3 },
+  },
+  callCtaText: { color: colors.white, fontWeight: '800', fontSize: fontSize.lg },
+  adminBox: {
+    backgroundColor: '#F4FAF7', borderWidth: 1.5, borderColor: colors.primary,
+    borderRadius: radius.md, padding: spacing.md, marginTop: spacing.md,
+  },
+  adminTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  adminTitle: { fontSize: fontSize.sm, fontWeight: '800', color: colors.primary, flex: 1 },
+  adminStatus: { fontSize: fontSize.xs, color: colors.textMuted },
+  adminBtns: { flexDirection: 'row', gap: 8, marginTop: spacing.sm },
+  abtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 5, borderRadius: radius.sm, paddingVertical: 9,
+  },
+  abtnOk: { backgroundColor: colors.primary },
+  abtnHide: { backgroundColor: colors.textMuted },
+  abtnDel: { backgroundColor: colors.danger },
+  abtnText: { color: colors.white, fontSize: fontSize.xs, fontWeight: '800' },
   simRow: { gap: 10, paddingVertical: 8 },
   sim: { width: 140, backgroundColor: colors.card, borderRadius: radius.md, overflow: 'hidden', elevation: 1 },
   simg: { width: 140, height: 90 },

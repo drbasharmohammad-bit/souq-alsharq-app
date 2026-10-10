@@ -8,7 +8,9 @@ import { FavoritesProvider } from '../context/FavoritesContext';
 import { GovProvider } from '../context/GovContext';
 import { RepoProvider } from '../repo/RepoContext';
 import { MedicalAdminScreen } from '../screens/admin/MedicalAdminScreen';
+import { AdminDashboardScreen } from '../screens/admin/AdminDashboardScreen';
 import { AdminScreen } from '../screens/admin/AdminScreen';
+import { AdminStoresScreen } from '../screens/admin/AdminStoresScreen';
 import { AnnouncementsAdminScreen } from '../screens/admin/AnnouncementsAdminScreen';
 import { BannersAdminScreen } from '../screens/admin/BannersAdminScreen';
 import { FeaturedReviewScreen } from '../screens/admin/FeaturedReviewScreen';
@@ -102,6 +104,8 @@ function AppRoot() {
               {/* الاشتراك والإدارة */}
               <Stack.Screen name="Subscription" component={SubscriptionScreen} options={{ title: 'الاشتراك' }} />
               <Stack.Screen name="Admin" component={AdminScreen} options={{ title: 'لوحة الإدارة' }} />
+              <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} options={{ title: 'لوحة المدير' }} />
+              <Stack.Screen name="AdminStores" component={AdminStoresScreen} options={{ title: 'إدارة المتاجر' }} />
               <Stack.Screen name="AdminReview" component={ReviewScreen} options={{ title: 'مراجعة الإعلانات' }} />
               <Stack.Screen name="AdminMedical" component={MedicalAdminScreen} options={{ title: 'الدليل الطبي' }} />
               <Stack.Screen name="AdminSubs" component={SubscriptionReviewScreen} options={{ title: 'مراجعة الإيصالات' }} />

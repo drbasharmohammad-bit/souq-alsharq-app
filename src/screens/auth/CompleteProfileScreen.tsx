@@ -1,8 +1,10 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { getAuth } from '@react-native-firebase/auth';
 import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
 import { FormField } from '../../components/FormField';
+import { ADMIN_EMAIL } from '../../config';
 import { useAuth } from '../../context/AuthContext';
 import { RootStackParamList } from '../../navigation/types';
 import { colors, fontSize, radius, spacing } from '../../theme';
@@ -10,11 +12,17 @@ import { AccountType } from '../../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CompleteProfile'>;
 
+const normEmail = (e?: string | null) => (e ?? '').trim().toLowerCase();
+
 export function CompleteProfileScreen({ navigation }: Props) {
   const { completeProfile } = useAuth();
   const [phone, setPhone] = useState('');
   const [type, setType] = useState<AccountType | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // المدير يُتجاوز اختيار نوع الحساب — يذهب مباشرة للوحة المدير
+  const isAdminEmail =
+    normEmail(getAuth().currentUser?.email) === normEmail(ADMIN_EMAIL);
 
   const save = async () => {
     const digits = phone.replace(/\D/g, '');
@@ -22,14 +30,17 @@ export function CompleteProfileScreen({ navigation }: Props) {
       Alert.alert('تنبيه', 'أدخل رقم تواصل صحيحًا (9 أرقام على الأقل)');
       return;
     }
-    if (!type) {
+    const finalType: AccountType = isAdminEmail ? 'individual' : type ?? 'individual';
+    if (!isAdminEmail && !type) {
       Alert.alert('تنبيه', 'اختر نوع الحساب');
       return;
     }
     setBusy(true);
     try {
-      const u = await completeProfile(phone, type);
-      if (u.accountType === 'merchant') {
+      const u = await completeProfile(phone, finalType);
+      if (u.isAdmin) {
+        navigation.reset({ index: 0, routes: [{ name: 'AdminDashboard' }] });
+      } else if (u.accountType === 'merchant') {
         navigation.replace('CreateStore');
       } else {
         navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
@@ -78,21 +89,31 @@ export function CompleteProfileScreen({ navigation }: Props) {
         <Text style={styles.hint}>يظهر هذا الرقم للمشترين للاتصال بك — للتواصل فقط</Text>
       </View>
 
-      <Text style={styles.typeTitle}>كيف ستستخدم التطبيق؟</Text>
-      <View style={styles.cards}>
-        <Card
-          value="merchant"
-          icon="storefront"
-          title="حساب تاجر"
-          desc="أنشئ متجرك واعرض منتجاتك لآلاف الزبائن — اشتراك شهري"
-        />
-        <Card
-          value="individual"
-          icon="account"
-          title="حساب فرد"
-          desc="انشر إعلاناتك مباشرة: سيارتك، شقتك، خدماتك — مجانًا"
-        />
-      </View>
+      {isAdminEmail ? null : <Text style={styles.typeTitle}>كيف ستستخدم التطبيق؟</Text>}
+      {isAdminEmail ? (
+        <View style={styles.adminNote}>
+          <AppIcon name="shield-account" size={40} color={colors.primary} />
+          <Text style={styles.adminTitle}>حساب الإدارة</Text>
+          <Text style={styles.adminDesc}>
+            تم التعرف على إيميل الإدارة — ستدخل مباشرة إلى لوحة المدير بكل الصلاحيات، دون الحاجة لاختيار نوع حساب.
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.cards}>
+          <Card
+            value="merchant"
+            icon="storefront"
+            title="حساب تاجر"
+            desc="أنشئ متجرك واعرض منتجاتك لآلاف الزبائن — اشتراك شهري"
+          />
+          <Card
+            value="individual"
+            icon="account"
+            title="حساب فرد"
+            desc="انشر إعلاناتك مباشرة: سيارتك، شقتك، خدماتك — مجانًا"
+          />
+        </View>
+      )}
 
       <Pressable style={[styles.btn, busy && styles.btnBusy]} onPress={save} disabled={busy}>
         <Text style={styles.btnText}>{busy ? 'جاري الحفظ...' : 'حفظ والمتابعة'}</Text>
@@ -125,6 +146,13 @@ const styles = StyleSheet.create({
   cardDesc: { fontSize: fontSize.xs, color: colors.textMuted, textAlign: 'center', marginTop: 4, lineHeight: 20 },
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: spacing.sm },
   checkText: { fontSize: fontSize.xs, fontWeight: '700', color: colors.primary },
+  adminNote: {
+    width: '100%', backgroundColor: colors.card, borderRadius: radius.md,
+    borderWidth: 1.5, borderColor: colors.primary,
+    padding: spacing.lg, alignItems: 'center', marginTop: spacing.sm,
+  },
+  adminTitle: { fontSize: fontSize.lg, fontWeight: '800', color: colors.primary, marginTop: spacing.sm },
+  adminDesc: { fontSize: fontSize.sm, color: colors.textMuted, textAlign: 'center', marginTop: 6, lineHeight: 22 },
   btn: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, width: '100%', alignItems: 'center', marginTop: spacing.xl },
   btnBusy: { opacity: 0.7 },
   btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },

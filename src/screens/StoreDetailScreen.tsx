@@ -110,13 +110,31 @@ export function StoreDetailScreen({ navigation, route }: Props) {
 
   return (
     <ScrollView style={styles.root} showsVerticalScrollIndicator={false}>
-      {/* الغلاف */}
+      {/* الغلاف — ترويسة سينمائية */}
       {store.coverImage ? (
         <View style={styles.coverImgWrap}>
           <RemoteImage uri={store.coverImage} style={styles.coverImg} />
+          <View style={styles.coverShade} />
           <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={8}>
             <AppIcon name="arrow-right" size={20} color={colors.primary} />
           </Pressable>
+          <View style={styles.coverCaption}>
+            <Text style={styles.coverStoreName} numberOfLines={1}>{store.name}</Text>
+            <View style={styles.coverBadges}>
+              {store.verified && (
+                <View style={styles.vbadge}>
+                  <AppIcon name="check-circle" size={13} color={colors.white} />
+                  <Text style={styles.badgeText}>موثق</Text>
+                </View>
+              )}
+              {store.featured && (
+                <View style={styles.fbadge}>
+                  <AppIcon name="star" size={13} color={colors.white} />
+                  <Text style={styles.badgeText}>مميز</Text>
+                </View>
+              )}
+            </View>
+          </View>
         </View>
       ) : (
         <View style={[styles.cover, { backgroundColor: store.g1 }]}>
@@ -143,23 +161,27 @@ export function StoreDetailScreen({ navigation, route }: Props) {
             <Text style={styles.logoText}>{store.name.charAt(0)}</Text>
           </View>
         )}
-        <View style={styles.nameRow}>
-          <Text style={styles.name}>{store.name}</Text>
-        </View>
-        <View style={styles.badgesRow}>
-          {store.verified && (
-            <View style={styles.vbadge}>
-              <AppIcon name="check-circle" size={13} color={colors.white} />
-              <Text style={styles.badgeText}>موثق</Text>
+        {!store.coverImage && (
+          <>
+            <View style={styles.nameRow}>
+              <Text style={styles.name}>{store.name}</Text>
             </View>
-          )}
-          {store.featured && (
-            <View style={styles.fbadge}>
-              <AppIcon name="star" size={13} color={colors.white} />
-              <Text style={styles.badgeText}>مميز</Text>
+            <View style={styles.badgesRow}>
+              {store.verified && (
+                <View style={styles.vbadge}>
+                  <AppIcon name="check-circle" size={13} color={colors.white} />
+                  <Text style={styles.badgeText}>موثق</Text>
+                </View>
+              )}
+              {store.featured && (
+                <View style={styles.fbadge}>
+                  <AppIcon name="star" size={13} color={colors.white} />
+                  <Text style={styles.badgeText}>مميز</Text>
+                </View>
+              )}
             </View>
-          )}
-        </View>
+          </>
+        )}
         <View style={styles.ratingRow}>
           <Stars value={avg} />
           <Text style={styles.ratingText}>
@@ -199,6 +221,48 @@ export function StoreDetailScreen({ navigation, route }: Props) {
           <Text style={styles.ctaText}>واتساب</Text>
         </Pressable>
       </View>
+
+      {/* صلاحيات المدير على المتجر */}
+      {user?.isAdmin && (
+        <View style={styles.adminBox}>
+          <View style={styles.adminTitleRow}>
+            <AppIcon name="shield-account" size={16} color={colors.primary} />
+            <Text style={styles.adminTitle}>إجراءات المدير</Text>
+          </View>
+          <View style={styles.adminBtns}>
+            <Pressable
+              style={[styles.abtn, store.verified ? styles.abtnOff : styles.abtnV]}
+              onPress={() => repo.updateStore(store.id, { verified: !store.verified })}>
+              <AppIcon name="check-circle" size={15} color={colors.white} />
+              <Text style={styles.abtnText}>{store.verified ? 'إلغاء التوثيق' : 'توثيق'}</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.abtn, store.featured ? styles.abtnOff : styles.abtnF]}
+              onPress={() => repo.updateStore(store.id, { featured: !store.featured })}>
+              <AppIcon name="star" size={15} color={colors.white} />
+              <Text style={styles.abtnText}>{store.featured ? 'إلغاء التمييز' : 'تمييز'}</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.abtn, styles.abtnD]}
+              onPress={() =>
+                Alert.alert('حذف المتجر', `سيُحذف «${store.name}» نهائيًا مع منتجاته وتصنيفاته. متابعة؟`, [
+                  { text: 'إلغاء', style: 'cancel' },
+                  {
+                    text: 'حذف',
+                    style: 'destructive',
+                    onPress: () => {
+                      repo.deleteStore(store.id);
+                      navigation.goBack();
+                    },
+                  },
+                ])
+              }>
+              <AppIcon name="delete" size={15} color={colors.white} />
+              <Text style={styles.abtnText}>حذف</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
 
       {/* التبويبات */}
       <View style={styles.tabs}>
@@ -350,23 +414,33 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: colors.background },
   empty: { textAlign: 'center', color: colors.textMuted, fontSize: fontSize.md, marginTop: 8 },
-  cover: { height: 170, alignItems: 'center', justifyContent: 'center' },
+  cover: { height: 200, alignItems: 'center', justifyContent: 'center' },
+  coverName: { color: colors.white, fontSize: 26, fontWeight: '800', textShadowColor: 'rgba(0,0,0,0.3)', textShadowRadius: 8 },
+  coverImgWrap: { height: 260 },
+  coverImg: { width: '100%', height: 260 },
+  coverShade: {
+    position: 'absolute', bottom: 0, left: 0, right: 0, height: 130,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  coverCaption: { position: 'absolute', bottom: 14, right: 16, left: 16 },
+  coverStoreName: {
+    color: colors.white, fontSize: 26, fontWeight: '800',
+    textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 10,
+  },
+  coverBadges: { flexDirection: 'row', gap: 6, marginTop: 8 },
   backBtn: {
     position: 'absolute', top: 50, right: 14, width: 36, height: 36, borderRadius: 18,
     backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', elevation: 2,
   },
-  coverName: { color: colors.white, fontSize: 26, fontWeight: '800', textShadowColor: 'rgba(0,0,0,0.3)', textShadowRadius: 8 },
-  coverImgWrap: { height: 200 },
-  coverImg: { width: '100%', height: 200 },
-  head: { paddingHorizontal: spacing.lg, marginTop: -34 },
+  head: { paddingHorizontal: spacing.lg, marginTop: -42 },
   logo: {
-    width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 4, borderColor: colors.white, elevation: 3,
+    width: 84, height: 84, borderRadius: 42, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 4, borderColor: colors.white, elevation: 4,
   },
-  logoText: { color: colors.white, fontSize: 30, fontWeight: '800' },
+  logoText: { color: colors.white, fontSize: 34, fontWeight: '800' },
   logoImg: {
-    width: 68, height: 68, borderRadius: 34,
-    borderWidth: 4, borderColor: colors.white, elevation: 3,
+    width: 84, height: 84, borderRadius: 42,
+    borderWidth: 4, borderColor: colors.white, elevation: 4,
     backgroundColor: colors.border,
   },
   chipsRow: { marginBottom: spacing.sm },
@@ -395,6 +469,23 @@ const styles = StyleSheet.create({
   ctaCall: { backgroundColor: colors.primary },
   ctaWa: { backgroundColor: '#1FA855' },
   ctaText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
+  adminBox: {
+    backgroundColor: '#F4FAF7', borderWidth: 1.5, borderColor: colors.primary,
+    borderRadius: radius.md, padding: spacing.md,
+    marginHorizontal: spacing.lg, marginTop: spacing.md,
+  },
+  adminTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  adminTitle: { fontSize: fontSize.sm, fontWeight: '800', color: colors.primary, flex: 1 },
+  adminBtns: { flexDirection: 'row', gap: 8, marginTop: spacing.sm },
+  abtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 5, borderRadius: radius.sm, paddingVertical: 9,
+  },
+  abtnV: { backgroundColor: colors.primary },
+  abtnF: { backgroundColor: colors.gold },
+  abtnOff: { backgroundColor: colors.textMuted },
+  abtnD: { backgroundColor: colors.danger },
+  abtnText: { color: colors.white, fontSize: fontSize.xs, fontWeight: '800' },
   tabs: { flexDirection: 'row', paddingHorizontal: spacing.lg, marginTop: spacing.md },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 10, borderBottomWidth: 2.5, borderBottomColor: colors.border },
   tabActive: { borderBottomColor: colors.primary },

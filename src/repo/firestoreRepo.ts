@@ -636,6 +636,12 @@ export class FirestoreRepo implements Repository {
       .sort((a, b) => b.createdAt - a.createdAt);
   }
 
+  deleteListing(id: string): void {
+    this.listings = this.listings.filter(l => l.id !== id);
+    this.emit();
+    this.bg(deleteDoc(doc(this.db, C.listings, id)), `deleteListing ${id}`);
+  }
+
   // ——— متاجر ———
   getStores(gov?: string): Store[] {
     return this.stores.filter(s => !gov || gov === 'الكل' || s.gov === gov);
@@ -703,6 +709,23 @@ export class FirestoreRepo implements Repository {
       if (logoImage !== undefined) fields.logoImage = 'single';
       this.syncImages(C.stores, this.stores, id, fields, 'stores');
     }
+  }
+
+  deleteStore(id: string): void {
+    this.stores = this.stores.filter(s => s.id !== id);
+    // حذف المنتجات والتصنيفات المرتبطة لتفادي السجلات اليتيمة
+    const prodIds = this.products.filter(p => p.storeId === id).map(p => p.id);
+    const catIds = this.categories.filter(c => c.storeId === id).map(c => c.id);
+    this.products = this.products.filter(p => p.storeId !== id);
+    this.categories = this.categories.filter(c => c.storeId !== id);
+    this.emit();
+    this.bg(deleteDoc(doc(this.db, C.stores, id)), `deleteStore ${id}`);
+    prodIds.forEach(pid =>
+      this.bg(deleteDoc(doc(this.db, C.products, pid)), `deleteStore product ${pid}`),
+    );
+    catIds.forEach(cid =>
+      this.bg(deleteDoc(doc(this.db, C.storeCategories, cid)), `deleteStore category ${cid}`),
+    );
   }
 
   // ——— تصنيفات داخل المتجر (v8) ———

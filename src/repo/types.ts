@@ -54,6 +54,7 @@ export interface Repository {
   getListingById(id: string): Listing | undefined;
   addListing(input: NewListingInput): Listing;
   updateListingStatus(id: string, status: AdStatus): void;
+  deleteListing(id: string): void;
   getUserListings(userId: string): Listing[];
 
   // متاجر
@@ -61,6 +62,7 @@ export interface Repository {
   getStoreById(id: string): Store | undefined;
   addStore(input: NewStoreInput): Store;
   updateStore(id: string, patch: Partial<Store>): void;
+  deleteStore(id: string): void;
 
   // تصنيفات داخل المتجر (ينشئها التاجر) — v8
   getCategoriesByStore(storeId: string): StoreCategory[];

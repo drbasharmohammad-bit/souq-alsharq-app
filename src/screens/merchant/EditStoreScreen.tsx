@@ -95,7 +95,9 @@ export function EditStoreScreen({ navigation }: Props) {
         max={1}
         label="صورة الغلاف"
       />
+      <Text style={styles.imgHint}>يُفضّل صورة عريضة (16:9) — صورة واجهة المحل أو أطباقه</Text>
       <ImagePickerField images={logo} onChange={setLogo} max={1} label="شعار المتجر" />
+      <Text style={styles.imgHint}>صورة مربعة (شعار المحل)</Text>
 
       <FormField
         label="اسم المتجر"
@@ -163,6 +165,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text },
+  imgHint: {
+    fontSize: fontSize.xs, color: colors.textMuted,
+    marginTop: -spacing.sm, marginBottom: spacing.md,
+  },
   sub: {
     fontSize: fontSize.sm,
     color: colors.textMuted,

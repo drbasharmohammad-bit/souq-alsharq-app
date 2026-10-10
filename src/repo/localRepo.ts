@@ -139,6 +139,11 @@ export class LocalRepo implements Repository {
       .sort((a, b) => b.createdAt - a.createdAt);
   }
 
+  deleteListing(id: string): void {
+    this.listings = this.listings.filter(l => l.id !== id);
+    this.emit();
+  }
+
   // ——— متاجر ———
   getStores(gov?: string): Store[] {
     return this.stores.filter(s => !gov || gov === 'الكل' || s.gov === gov);
@@ -161,6 +166,13 @@ export class LocalRepo implements Repository {
       Object.assign(s, patch);
       this.emit();
     }
+  }
+
+  deleteStore(id: string): void {
+    this.stores = this.stores.filter(s => s.id !== id);
+    this.products = this.products.filter(p => p.storeId !== id);
+    this.categories = this.categories.filter(c => c.storeId !== id);
+    this.emit();
   }
 
   /** نسخة محلية: لا رفع سحابي — تُعيد الـURIs كما هي. */

@@ -1,7 +1,9 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
 import { AppIcon } from '../components/AppIcon';
+import { useAuth } from '../context/AuthContext';
 import { AccountScreen } from '../screens/AccountScreen';
+import { AdminDashboardScreen } from '../screens/admin/AdminDashboardScreen';
 import { FavoritesScreen } from '../screens/FavoritesScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { SectionsScreen } from '../screens/SectionsScreen';
@@ -15,6 +17,7 @@ const ICONS: Record<string, string> = {
   Sections: 'view-grid',
   Favorites: 'heart',
   Account: 'account',
+  AdminTab: 'shield-account',
 };
 
 const LABELS: Record<string, string> = {
@@ -22,9 +25,13 @@ const LABELS: Record<string, string> = {
   Sections: 'الأقسام',
   Favorites: 'المفضلة',
   Account: 'حسابي',
+  AdminTab: 'الإدارة',
 };
 
 export function TabsNavigator() {
+  const { user } = useAuth();
+  const isAdmin = !!user?.isAdmin;
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -40,6 +47,7 @@ export function TabsNavigator() {
       <Tab.Screen name="Sections" component={SectionsScreen} />
       <Tab.Screen name="Favorites" component={FavoritesScreen} />
       <Tab.Screen name="Account" component={AccountScreen} />
+      {isAdmin && <Tab.Screen name="AdminTab" component={AdminDashboardScreen} />}
     </Tab.Navigator>
   );
 }
