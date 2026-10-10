@@ -11,6 +11,7 @@ jobs:
     env:
       SHARQ_STORE_PASSWORD: LuHyPG9uI5tE7SEJSYUf
       SHARQ_KEY_PASSWORD: LuHyPG9uI5tE7SEJSYUf
+      APP_VERSION_CODE: ${{ github.run_number }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
