@@ -68,9 +68,17 @@ export function HomeScreen({ navigation }: Props) {
   const showAnn = latestAnn && latestAnn.id !== dismissedId;
 
   const featured = useMemo(
-    () => repo.getListings({ gov, status: 'approved' }).slice(0, 6),
+    () => repo.getFeaturedListings(gov === 'الكل' ? undefined : gov),
     [repo, gov],
   );
+  // أحدث المنتجات: أحدث الإعلانات المعتمدة باستثناء المميزة الظاهرة (v15)
+  const latestProducts = useMemo(() => {
+    const featIds = new Set(featured.map(f => f.id));
+    return repo
+      .getListings({ gov: gov === 'الكل' ? undefined : gov, status: 'approved' })
+      .filter(l => !featIds.has(l.id))
+      .slice(0, 6);
+  }, [repo, gov, featured]);
   const stores = useMemo(() => repo.getStores(gov === 'الكل' ? undefined : gov), [repo, gov]);
 
   // البانرات الظاهرة لمحافظة المستخدم (أو 'all' للجميع)
@@ -87,9 +95,9 @@ export function HomeScreen({ navigation }: Props) {
   const carousel: CarouselItem[] = [];
   repo
     .getFeaturedRequests()
-    .filter(f => f.status === 'active' && (!f.endDate || f.endDate > now))
+    .filter(f => f.status === 'active' && f.storeId && !f.listingId && (!f.endDate || f.endDate > now))
     .forEach(f =>
-      carousel.push({ kind: 'featured', id: f.id, imageUri: f.imageUri, storeId: f.storeId }),
+      carousel.push({ kind: 'featured', id: f.id, imageUri: f.imageUri, storeId: f.storeId as string }),
     );
   visibleBanners.forEach(b => carousel.push({ kind: 'banner', data: b }));
   if (carousel.length === 0) {
@@ -203,16 +211,27 @@ export function HomeScreen({ navigation }: Props) {
     </Pressable>
   );
 
-  const renderAdCard = (item: Listing) => {
+  const renderAdCard = (item: Listing, showFeatBadge = false) => {
     const fav = isFav(item.id);
     const priceText = item.price === null ? 'السعر عند الاتصال' : formatPrice(item.price, item.priceNote);
+    const img = item.images?.[0];
     return (
       <Pressable
         key={item.id}
         style={styles.adCard}
         onPress={() => navigation.navigate('AdDetail', { listingId: item.id })}>
         <View style={[styles.adImgWrap, { backgroundColor: item.g1 + '1F' }]}>
-          <PlaceholderImage icon={item.icon} color={item.g1} size={52} />
+          <RemoteImage
+            uri={img}
+            style={styles.adImg}
+            fallback={<PlaceholderImage icon={item.icon} color={item.g1} size={52} />}
+          />
+          {showFeatBadge && (
+            <View style={styles.adFeatBadge}>
+              <AppIcon name="star" size={11} color={colors.white} />
+              <Text style={styles.adFeatBadgeText}>مميز</Text>
+            </View>
+          )}
           <Pressable style={styles.favBtn} hitSlop={8} onPress={() => toggle(item.id)}>
             <AppIcon name={fav ? 'heart' : 'heart-outline'} size={20} color={colors.danger} />
           </Pressable>
@@ -348,18 +367,32 @@ export function HomeScreen({ navigation }: Props) {
         renderEmptyState('storefront-outline', 'لا توجد متاجر في هذه المحافظة بعد')
       )}
 
-      {/* إعلانات مميزة */}
+      {/* إعلانات مميزة — قسم مدفوع */}
       <View style={styles.secTitleRow}>
         <View style={styles.secAccent} />
         <Text style={styles.secTitle}>إعلانات مميزة</Text>
-        <AppIcon name="tag" size={20} color={colors.gold} />
+        <AppIcon name="star" size={20} color={colors.gold} />
       </View>
       {featured.length > 0 ? (
         <View style={styles.adGrid}>
-          {featured.map(renderAdCard)}
+          {featured.map(item => renderAdCard(item, true))}
         </View>
       ) : (
-        renderEmptyState('tag-outline', 'لا توجد إعلانات مميزة حاليًا')
+        renderEmptyState('star-outline', 'لا توجد إعلانات مميزة حاليًا — ميّز إعلانك ليظهر هنا')
+      )}
+
+      {/* أحدث المنتجات */}
+      <View style={styles.secTitleRow}>
+        <View style={styles.secAccent} />
+        <Text style={styles.secTitle}>أحدث المنتجات</Text>
+        <AppIcon name="package-variant" size={20} color={colors.primary} />
+      </View>
+      {latestProducts.length > 0 ? (
+        <View style={styles.adGrid}>
+          {latestProducts.map(item => renderAdCard(item))}
+        </View>
+      ) : (
+        renderEmptyState('package-variant', 'لا توجد منتجات بعد — كن أول من ينشر إعلانه')
       )}
       <View style={{ height: spacing.xl }} />
     </ScrollView>
@@ -534,6 +567,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  adImg: { width: '100%', height: '100%' },
+  adFeatBadge: {
+    position: 'absolute',
+    top: 6,
+    end: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.gold,
+    borderRadius: radius.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  adFeatBadgeText: { color: colors.white, fontSize: fontSize.xs, fontWeight: '800' },
   favBtn: {
     position: 'absolute',
     top: 6,

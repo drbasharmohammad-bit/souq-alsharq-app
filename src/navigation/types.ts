@@ -46,6 +46,6 @@ export type RootStackParamList = {
   AdminFeatured: undefined;
   AdminFeaturedSettings: undefined;
   Announcements: undefined;
-  // التاجر: إعلان مميز
-  FeaturedAd: undefined;
+  // تمييز: بانر للتاجر، أو إعلان محدد (v15)
+  FeaturedAd: { listingId?: string } | undefined;
 };

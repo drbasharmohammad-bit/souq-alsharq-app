@@ -91,11 +91,8 @@ export class LocalRepo implements Repository {
     this.doctors = []; // بلا بذر — الأطباء بالتسجيل الذاتي والموافقة فقط (v14)
     this.pharmacies = PHARMS.map((p, i) => ({ ...p, id: `ph${i}` }));
     this.labs = LABS.map((l, i) => ({ ...l, id: `lab${i}` }));
-    // تقييمات تجريبية لأحد المتاجر
-    this.reviews = [
-      { id: 'rev1', storeId: 's2', userName: 'أبو محمد', rating: 5, text: 'أطيب مشاوي بالحسكة، والخدمة سريعة. أنصح فيه بقوة.', createdAt: now - 86400000 * 2 },
-      { id: 'rev2', storeId: 's2', userName: 'لينا خالد', rating: 4, text: 'الأكل طيب والأسعار مناسبة، بس الازدحام بالمسا كبير.', createdAt: now - 86400000 * 5 },
-    ];
+    // بلا تقييمات تجريبية — التقييمات الحقيقية فقط (v15)
+    this.reviews = [];
   }
 
   // ——— إعلانات ———
@@ -143,6 +140,29 @@ export class LocalRepo implements Repository {
     return this.listings
       .filter(l => l.userId === userId)
       .sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  // تمييز مدفوع على مستوى الإعلان (v15)
+  setListingFeatured(id: string, until?: number): void {
+    const l = this.listings.find(x => x.id === id);
+    if (l) {
+      l.featuredUntil = until;
+      this.emit();
+    }
+  }
+
+  // الإعلانات المميزة السارية (الأحدث تمييزًا أولًا)
+  getFeaturedListings(gov?: string): Listing[] {
+    const now = Date.now();
+    return this.listings
+      .filter(
+        l =>
+          l.status === 'approved' &&
+          l.featuredUntil !== undefined &&
+          l.featuredUntil > now &&
+          (!gov || gov === 'الكل' || l.gov === gov),
+      )
+      .sort((a, b) => (b.featuredUntil ?? 0) - (a.featuredUntil ?? 0));
   }
 
   deleteListing(id: string): void {

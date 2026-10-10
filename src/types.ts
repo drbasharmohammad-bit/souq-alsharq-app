@@ -57,6 +57,7 @@ export interface Listing {
   createdAt: number;
   specs?: Spec[];
   images?: string[];
+  featuredUntil?: number; // تمييز مدفوع سارٍ حتى هذا التاريخ (millis) — v15
 }
 
 export interface Product {
@@ -132,7 +133,8 @@ export type FeaturedRequestStatus = 'pending' | 'active' | 'rejected' | 'expired
 export interface FeaturedRequest {
   ownerUid?: string; // Firebase Auth uid للمالك
   id: string;
-  storeId: string;
+  storeId?: string; // طلب بانر (وضع التاجر)
+  listingId?: string; // طلب تمييز إعلان (v15)
   userId: string;
   imageUri: string;
   receiptUri?: string;

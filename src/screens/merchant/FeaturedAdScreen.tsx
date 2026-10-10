@@ -1,8 +1,9 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
 import { ImagePickerField } from '../../components/ImagePickerField';
+import { PlaceholderImage } from '../../components/PlaceholderImage';
 import { useAuth } from '../../context/AuthContext';
 import { RootStackParamList } from '../../navigation/types';
 import { useRepo } from '../../repo/RepoContext';
@@ -18,21 +19,35 @@ const STATUS_LABEL: Record<string, string> = {
   expired: 'انتهت المدة',
 };
 
-export function FeaturedAdScreen({}: Props) {
+export function FeaturedAdScreen({ route }: Props) {
   const { user } = useAuth();
   const repo = useRepo();
   const [bannerImg, setBannerImg] = useState<string[]>([]);
   const [receipt, setReceipt] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
+  const listingId = route.params?.listingId;
+  const listing = listingId ? repo.getListingById(listingId) : undefined;
+  // وضع تمييز إعلان محدد (v15) مقابل وضع بانر التاجر القديم
+  const isListingMode = !!listing;
+
   const settings = repo.getFeaturedSettings();
   const myRequests = useMemo(
-    () => (user ? repo.getFeaturedRequests().filter(f => f.userId === user.id) : []),
-    [repo, user],
+    () =>
+      user
+        ? repo
+            .getFeaturedRequests()
+            .filter(f => f.userId === user.id && (isListingMode ? f.listingId === listingId : !f.listingId))
+        : [],
+    [repo, user, isListingMode, listingId],
   );
+  const existingActive = myRequests.find(f => f.status === 'active' || f.status === 'pending');
+  const alreadyFeatured = listing?.featuredUntil !== undefined && listing.featuredUntil > Date.now();
+
   const store = user?.storeId ? repo.getStoreById(user.storeId) : undefined;
 
-  if (user?.accountType !== 'merchant') {
+  // وضع البانر القديم مخصص لأصحاب المتاجر فقط
+  if (!isListingMode && user?.accountType !== 'merchant') {
     return (
       <View style={styles.root}>
         <View style={styles.emptyWrap}>
@@ -43,7 +58,54 @@ export function FeaturedAdScreen({}: Props) {
     );
   }
 
-  const submit = async () => {
+  if (isListingMode && !listing) {
+    return (
+      <View style={styles.root}>
+        <View style={styles.emptyWrap}>
+          <AppIcon name="alert-circle" size={52} color={colors.textMuted} />
+          <Text style={styles.empty}>الإعلان غير موجود</Text>
+        </View>
+      </View>
+    );
+  }
+
+  const submitListing = async () => {
+    if (!user || !listing || !listingId) return;
+    const img = listing.images?.[0];
+    if (!img) {
+      Alert.alert('تنبيه', 'الإعلانات المميزة تحتاج صورة حقيقية واحدة على الأقل');
+      return;
+    }
+    if (existingActive) {
+      Alert.alert('تنبيه', 'يوجد طلب تمييز قائم لهذا الإعلان');
+      return;
+    }
+    if (settings.price > 0 && receipt.length === 0) {
+      Alert.alert('تنبيه', 'اختر صورة الإيصال أولًا');
+      return;
+    }
+    setSaving(true);
+    try {
+      const [receiptUrl] = receipt.length > 0 ? await repo.uploadImages(receipt, 'featured') : [undefined];
+      repo.addFeaturedRequest({
+        listingId,
+        userId: user.id,
+        imageUri: img,
+        receiptUri: receiptUrl,
+      });
+      setReceipt([]);
+      Alert.alert('تم', 'أُرسل طلب التمييز — تراجعه الإدارة ويظهر إعلانك بقسم «إعلانات مميزة» بعد الموافقة');
+    } catch {
+      Alert.alert(
+        'تعذر الإرسال',
+        'فشل رفع الإيصال — تحقق من اتصال الإنترنت وحاول مجددًا.',
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const submitBanner = async () => {
     if (!user || !user.storeId) return;
     if (bannerImg.length === 0) {
       Alert.alert('تنبيه', 'الإعلانات المميزة تحتاج صورة حقيقية واحدة على الأقل');
@@ -82,12 +144,33 @@ export function FeaturedAdScreen({}: Props) {
     <ScrollView style={styles.root} contentContainerStyle={styles.wrap}>
       <View style={styles.headRow}>
         <AppIcon name="star" size={26} color={colors.gold} />
-        <Text style={styles.title}>ميّز إعلانك بالبانر الرئيسي</Text>
+        <Text style={styles.title}>
+          {isListingMode ? 'ميّز إعلانك بقسم المميزة' : 'ميّز إعلانك بالبانر الرئيسي'}
+        </Text>
       </View>
       <Text style={styles.desc}>
-        يظهر إعلانك المصوَّر في البانر الرئيسي للواجهة أمام كل المستخدمين لمدة{' '}
-        {settings.durationDays} أيام بعد موافقة الإدارة.
+        {isListingMode
+          ? `يظهر إعلانك بقسم «إعلانات مميزة» في الواجهة أمام كل المستخدمين لمدة ${settings.durationDays} أيام بعد موافقة الإدارة.`
+          : `يظهر إعلانك المصوَّر في البانر الرئيسي للواجهة أمام كل المستخدمين لمدة ${settings.durationDays} أيام بعد موافقة الإدارة.`}
       </Text>
+
+      {isListingMode && listing && (
+        <View style={styles.listingCard}>
+          {listing.images?.[0] ? (
+            <Image source={{ uri: listing.images[0] }} style={styles.listingImg} resizeMode="cover" />
+          ) : (
+            <PlaceholderImage icon={listing.icon} color={listing.g1} size={44} />
+          )}
+          <View style={styles.listingBody}>
+            <Text style={styles.listingName} numberOfLines={2}>{listing.name}</Text>
+            {alreadyFeatured ? (
+              <Text style={styles.featNow}>مميز حتى {formatDateTime(listing.featuredUntil!)}</Text>
+            ) : existingActive ? (
+              <Text style={styles.featWait}>طلب تمييز {STATUS_LABEL[existingActive.status]}</Text>
+            ) : null}
+          </View>
+        </View>
+      )}
 
       <View style={styles.priceBox}>
         <Text style={styles.priceLabel}>سعر التمييز</Text>
@@ -96,7 +179,9 @@ export function FeaturedAdScreen({}: Props) {
         </Text>
       </View>
 
-      <ImagePickerField images={bannerImg} onChange={setBannerImg} max={1} label="صورة الإعلان (تظهر بالبانر)" />
+      {!isListingMode && (
+        <ImagePickerField images={bannerImg} onChange={setBannerImg} max={1} label="صورة الإعلان (تظهر بالبانر)" />
+      )}
 
       {settings.price > 0 && (
         <>
@@ -108,16 +193,21 @@ export function FeaturedAdScreen({}: Props) {
         </>
       )}
 
-      <Pressable style={[styles.btn, saving && styles.btnDisabled]} onPress={submit} disabled={saving}>
-        {saving ? (
-          <ActivityIndicator color={colors.white} />
-        ) : (
-          <View style={styles.btnRow}>
-            <AppIcon name="upload" size={18} color={colors.white} />
-            <Text style={styles.btnText}>إرسال طلب التمييز</Text>
-          </View>
-        )}
-      </Pressable>
+      {!alreadyFeatured && !existingActive && (
+        <Pressable
+          style={[styles.btn, saving && styles.btnDisabled]}
+          onPress={isListingMode ? submitListing : submitBanner}
+          disabled={saving}>
+          {saving ? (
+            <ActivityIndicator color={colors.white} />
+          ) : (
+            <View style={styles.btnRow}>
+              <AppIcon name="upload" size={18} color={colors.white} />
+              <Text style={styles.btnText}>إرسال طلب التمييز</Text>
+            </View>
+          )}
+        </Pressable>
+      )}
 
       <Text style={styles.listTitle}>طلباتي ({myRequests.length})</Text>
       <FlatList
@@ -151,6 +241,21 @@ const styles = StyleSheet.create({
   headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   title: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text, textAlign: 'center' },
   desc: { fontSize: fontSize.sm, color: colors.textMuted, lineHeight: 22, textAlign: 'center', marginTop: spacing.sm },
+  listingCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginTop: spacing.md,
+    elevation: 1,
+  },
+  listingImg: { width: 64, height: 64, borderRadius: radius.sm },
+  listingBody: { flex: 1 },
+  listingName: { fontSize: fontSize.md, fontWeight: '800', color: colors.text },
+  featNow: { fontSize: fontSize.sm, fontWeight: '800', color: colors.gold, marginTop: 4 },
+  featWait: { fontSize: fontSize.sm, fontWeight: '700', color: '#8A6D14', marginTop: 4 },
   priceBox: { backgroundColor: colors.card, borderRadius: radius.md, borderWidth: 2, borderColor: colors.gold, padding: spacing.md, marginTop: spacing.md, alignItems: 'center' },
   priceLabel: { fontSize: fontSize.sm, color: colors.textMuted },
   price: { fontSize: fontSize.xl, fontWeight: '800', color: colors.gold, marginTop: 4 },

@@ -56,6 +56,9 @@ export interface Repository {
   updateListingStatus(id: string, status: AdStatus): void;
   deleteListing(id: string): void;
   getUserListings(userId: string): Listing[];
+  // تمييز مدفوع على مستوى الإعلان (v15)
+  setListingFeatured(id: string, until?: number): void;
+  getFeaturedListings(gov?: string): Listing[];
 
   // متاجر
   getStores(gov?: string): Store[];
