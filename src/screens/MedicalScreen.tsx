@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../components/AppIcon';
 import { GovChips } from '../components/GovChips';
 import { PlaceholderImage } from '../components/PlaceholderImage';
+import { RemoteImage } from '../components/RemoteImage';
 import { GOVS } from '../data';
 import { useRepo } from '../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../theme';
@@ -47,7 +48,11 @@ export function MedicalScreen() {
   // صورة السجل إن وُجدت (دائرية بنفس الحجم) — وإلا الـPlaceholder كبديل
   const avatar = (photo: string | undefined, icon: string, color: string) =>
     photo ? (
-      <Image source={{ uri: photo }} style={styles.avatar} />
+      <RemoteImage
+        uri={photo}
+        style={styles.avatar}
+        fallback={<PlaceholderImage icon={icon} color={color} size={60} />}
+      />
     ) : (
       <PlaceholderImage icon={icon} color={color} size={60} />
     );

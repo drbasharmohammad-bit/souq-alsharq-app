@@ -2,7 +2,6 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
 import {
   Dimensions,
-  Image,
   Linking,
   Modal,
   Pressable,
@@ -12,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { AppIcon } from '../components/AppIcon';
+import { RemoteImage } from '../components/RemoteImage';
 import { useFavorites } from '../context/FavoritesContext';
 import { useGov } from '../context/GovContext';
 import { formatPrice, sectionName } from '../data';
@@ -116,7 +116,7 @@ export function AdDetailScreen({ navigation, route }: Props) {
             onMomentumScrollEnd={e => setPage(Math.round(e.nativeEvent.contentOffset.x / W))}>
             {images.map(uri => (
               <Pressable key={uri} onPress={() => setFullImg(uri)}>
-                <Image source={{ uri }} style={styles.gimg} resizeMode="cover" />
+                <RemoteImage uri={uri} style={styles.gimg} />
               </Pressable>
             ))}
           </ScrollView>
@@ -247,7 +247,15 @@ export function AdDetailScreen({ navigation, route }: Props) {
                         : navigation.push('AdDetail', { productId: item.id })
                     }>
                     {imgUri ? (
-                      <Image source={{ uri: imgUri }} style={styles.simg} resizeMode="cover" />
+                      <RemoteImage
+                        uri={imgUri}
+                        style={styles.simg}
+                        fallback={
+                          <View style={[styles.simg, styles.simgPh]}>
+                            <AppIcon name={isL ? (item as { icon: string }).icon : 'image'} size={30} color={colors.textMuted} />
+                          </View>
+                        }
+                      />
                     ) : (
                       <View style={[styles.simg, styles.simgPh]}>
                         <AppIcon name={isL ? (item as { icon: string }).icon : 'image'} size={30} color={colors.textMuted} />
@@ -271,7 +279,7 @@ export function AdDetailScreen({ navigation, route }: Props) {
       {/* ملء الشاشة */}
       <Modal visible={!!fullImg} transparent animationType="fade" onRequestClose={() => setFullImg(null)}>
         <Pressable style={styles.modal} onPress={() => setFullImg(null)}>
-          {fullImg && <Image source={{ uri: fullImg }} style={styles.fullImg} resizeMode="contain" />}
+          {fullImg && <RemoteImage uri={fullImg} style={styles.fullImg} resizeMode="contain" />}
           <View style={styles.modalClose}>
             <AppIcon name="close" size={22} color={colors.white} />
           </View>

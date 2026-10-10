@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
-import { Alert, FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
 import { FormField } from '../../components/FormField';
 import { ImagePickerField } from '../../components/ImagePickerField';
@@ -26,6 +26,7 @@ export function BannersAdminScreen({}: Props) {
   const [target, setTarget] = useState<TargetChoice>('none');
   const [storeId, setStoreId] = useState('');
   const [gov, setGov] = useState('الكل');
+  const [saving, setSaving] = useState(false);
 
   const banners = useMemo(() => repo.getBanners(), [repo]);
   const stores = useMemo(() => repo.getStores(), [repo]);
@@ -51,7 +52,7 @@ export function BannersAdminScreen({}: Props) {
     );
   }
 
-  const save = () => {
+  const save = async () => {
     if (!title.trim()) {
       Alert.alert('تنبيه', 'أدخل عنوان البانر');
       return;
@@ -64,28 +65,39 @@ export function BannersAdminScreen({}: Props) {
       Alert.alert('تنبيه', 'اختر المتجر الوجهة');
       return;
     }
-    const input = {
-      title: title.trim(),
-      subtitle: subtitle.trim() || undefined,
-      imageUri: images[0],
-      targetType: (target === 'none'
-        ? null
-        : target === 'announcements'
-          ? 'announcement'
-          : target === 'store'
-            ? 'store'
-            : 'section') as BannerTargetType,
-      targetId: target === 'none' ? undefined : target === 'store' ? storeId : target,
-      governorate: gov === 'الكل' ? 'all' : gov,
-    };
-    repo.addBanner(input);
-    setTitle('');
-    setSubtitle('');
-    setImages([]);
-    setTarget('none');
-    setStoreId('');
-    setGov('الكل');
-    Alert.alert('تم', 'أُضيف البانر وسيظهر في الواجهة الرئيسية');
+    setSaving(true);
+    try {
+      const [imageUrl] = await repo.uploadImages(images, 'banners');
+      const input = {
+        title: title.trim(),
+        subtitle: subtitle.trim() || undefined,
+        imageUri: imageUrl,
+        targetType: (target === 'none'
+          ? null
+          : target === 'announcements'
+            ? 'announcement'
+            : target === 'store'
+              ? 'store'
+              : 'section') as BannerTargetType,
+        targetId: target === 'none' ? undefined : target === 'store' ? storeId : target,
+        governorate: gov === 'الكل' ? 'all' : gov,
+      };
+      repo.addBanner(input);
+      setTitle('');
+      setSubtitle('');
+      setImages([]);
+      setTarget('none');
+      setStoreId('');
+      setGov('الكل');
+      Alert.alert('تم', 'أُضيف البانر وسيظهر في الواجهة الرئيسية');
+    } catch {
+      Alert.alert(
+        'تعذر الحفظ',
+        'فشل رفع صورة البانر — تحقق من اتصال الإنترنت وحاول مجددًا.',
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   const remove = (id: string) => {
@@ -170,11 +182,15 @@ export function BannersAdminScreen({}: Props) {
           onChange={setGov}
         />
 
-        <Pressable style={styles.btn} onPress={save}>
-          <View style={styles.btnRow}>
-            <AppIcon name="image-plus" size={18} color={colors.white} />
-            <Text style={styles.btnText}>إضافة البانر</Text>
-          </View>
+        <Pressable style={[styles.btn, saving && styles.btnDisabled]} onPress={save} disabled={saving}>
+          {saving ? (
+            <ActivityIndicator color={colors.white} />
+          ) : (
+            <View style={styles.btnRow}>
+              <AppIcon name="image-plus" size={18} color={colors.white} />
+              <Text style={styles.btnText}>إضافة البانر</Text>
+            </View>
+          )}
         </Pressable>
       </View>
 
@@ -227,6 +243,7 @@ const styles = StyleSheet.create({
   chipText: { fontSize: fontSize.sm, color: colors.text },
   chipTextActive: { color: colors.white, fontWeight: '700' },
   btn: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.md },
+  btnDisabled: { opacity: 0.7 },
   btnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
   listTitle: { fontSize: fontSize.md, fontWeight: '800', color: colors.text, marginTop: spacing.lg, marginBottom: spacing.sm },

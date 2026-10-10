@@ -565,6 +565,19 @@ export class FirestoreRepo implements Repository {
     }
   }
 
+  /**
+   * يرفع صورًا محلية إلى Cloudinary وينتظر اكتمال الرفع — للاستخدام مع
+   * await من الشاشات قبل الحفظ. الروابط https تُمرَّر كما هي بلا إعادة
+   * رفع. يرمي خطأً واضحًا عند الفشل (لا فشل صامت).
+   */
+  async uploadImages(uris: string[], folder: string): Promise<string[]> {
+    const urls: string[] = [];
+    for (const uri of uris) {
+      urls.push(isLocalUri(uri) ? await uploadImage(uri, folder) : uri);
+    }
+    return urls;
+  }
+
   // ——— إعلانات ———
   getListings(filter: ListingFilter = {}): Listing[] {
     return this.listings
@@ -647,21 +660,48 @@ export class FirestoreRepo implements Repository {
 
   updateStore(id: string, patch: Partial<Store>): void {
     const s = this.stores.find(x => x.id === id);
-    if (s) {
-      Object.assign(s, patch);
-      this.emit();
-      // id وownerUid لا يُكتبان — الملكية ثابتة
-      const { id: _id, ownerUid: _ou, ...rest } = patch;
+    if (!s) return;
+    // فصل حقول الصور عن النصوص: Firestore لا يستقبل أبدًا URI محليًا
+    // (file://) — الكاش وحده يعرض الصورة المختارة فورًا على هذا الجهاز،
+    // وروابط https تُكتب في Firestore فورًا، والمحلية تُرفع بالخلفية.
+    const {
+      id: _id,
+      ownerUid: _ou,
+      coverImage,
+      logoImage,
+      ...textPatch
+    } = patch;
+    Object.assign(s, textPatch);
+    this.emit();
+    // id وownerUid لا يُكتبان — الملكية ثابتة
+    const cleanText = clean(textPatch);
+    if (Object.keys(cleanText).length > 0) {
       this.bg(
-        updateDoc(doc(this.db, C.stores, id), clean(rest)),
+        updateDoc(doc(this.db, C.stores, id), cleanText),
         `updateStore ${id}`,
       );
-      if (patch.coverImage !== undefined || patch.logoImage !== undefined) {
-        const fields: Partial<Record<'coverImage' | 'logoImage', 'single'>> = {};
-        if (patch.coverImage !== undefined) fields.coverImage = 'single';
-        if (patch.logoImage !== undefined) fields.logoImage = 'single';
-        this.syncImages(C.stores, this.stores, id, fields, 'stores');
+    }
+    if (coverImage !== undefined || logoImage !== undefined) {
+      if (coverImage !== undefined) s.coverImage = coverImage;
+      if (logoImage !== undefined) s.logoImage = logoImage;
+      this.emit();
+      const imgPatch: Partial<Store> = {};
+      if (coverImage !== undefined && !isLocalUri(coverImage)) {
+        imgPatch.coverImage = coverImage;
       }
+      if (logoImage !== undefined && !isLocalUri(logoImage)) {
+        imgPatch.logoImage = logoImage;
+      }
+      if (Object.keys(imgPatch).length > 0) {
+        this.bg(
+          updateDoc(doc(this.db, C.stores, id), clean(imgPatch)),
+          `updateStore images ${id}`,
+        );
+      }
+      const fields: Partial<Record<'coverImage' | 'logoImage', 'single'>> = {};
+      if (coverImage !== undefined) fields.coverImage = 'single';
+      if (logoImage !== undefined) fields.logoImage = 'single';
+      this.syncImages(C.stores, this.stores, id, fields, 'stores');
     }
   }
 

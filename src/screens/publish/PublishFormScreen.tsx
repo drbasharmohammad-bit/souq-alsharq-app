@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
 import { FormField } from '../../components/FormField';
 import { ImagePickerField } from '../../components/ImagePickerField';
@@ -37,11 +37,12 @@ export function PublishFormScreen({ navigation, route }: Props) {
   const set = (k: string, v: string) => setF(prev => ({ ...prev, [k]: v }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [images, setImages] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const isCars = sectionKey === 'cars';
   const isEstate = sectionKey === 'estate';
 
-  const submit = () => {
+  const submit = async () => {
     const e: Record<string, string> = {};
     const need = (k: string, label: string) => {
       if (!f[k]?.trim()) e[k] = `${label} مطلوب`;
@@ -97,29 +98,40 @@ export function PublishFormScreen({ navigation, route }: Props) {
 
     const priceNum = f.price?.trim() ? parseInt(f.price.replace(/[^\d]/g, ''), 10) : null;
 
-    repo.addListing({
-      kind,
-      name,
-      price: Number.isFinite(priceNum) ? priceNum : null,
-      priceNote: !priceNum ? 'حسب الاتفاق' : undefined,
-      gov: f.gov,
-      area: f.area?.trim() || f.gov,
-      sec: sectionKey as SectionKey,
-      sub: subKey,
-      icon: sub.icon,
-      g1: sub.g1,
-      g2: sub.g2,
-      desc: f.desc?.trim() || '—',
-      seller: isMerchant && store ? store.name : f.sellerName?.trim() || 'فرد',
-      sellerType: isMerchant ? 'store' : 'individual',
-      phone: f.phone.trim(),
-      advertiserName: isEstate ? f.fullName.trim() : undefined,
-      userId: user.id,
-      specs: specs.length ? specs : undefined,
-      images: images.length > 0 ? images : undefined,
-    });
-
-    navigation.replace('PublishSuccess');
+    setSaving(true);
+    try {
+      // رفع الصور أولًا مع الانتظار — لا URI محلي في Firestore أبدًا
+      const urls = await repo.uploadImages(images, 'listings');
+      repo.addListing({
+        kind,
+        name,
+        price: Number.isFinite(priceNum) ? priceNum : null,
+        priceNote: !priceNum ? 'حسب الاتفاق' : undefined,
+        gov: f.gov,
+        area: f.area?.trim() || f.gov,
+        sec: sectionKey as SectionKey,
+        sub: subKey,
+        icon: sub.icon,
+        g1: sub.g1,
+        g2: sub.g2,
+        desc: f.desc?.trim() || '—',
+        seller: isMerchant && store ? store.name : f.sellerName?.trim() || 'فرد',
+        sellerType: isMerchant ? 'store' : 'individual',
+        phone: f.phone.trim(),
+        advertiserName: isEstate ? f.fullName.trim() : undefined,
+        userId: user.id,
+        specs: specs.length ? specs : undefined,
+        images: urls.length > 0 ? urls : undefined,
+      });
+      navigation.replace('PublishSuccess');
+    } catch {
+      Alert.alert(
+        'تعذر الإرسال',
+        'فشل رفع الصور إلى الخادم — تحقق من اتصال الإنترنت وحاول مجددًا.',
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -177,8 +189,12 @@ export function PublishFormScreen({ navigation, route }: Props) {
         </>
       )}
 
-      <Pressable style={styles.btn} onPress={submit}>
-        <Text style={styles.btnText}>إرسال للمراجعة ←</Text>
+      <Pressable style={[styles.btn, saving && styles.btnDisabled]} onPress={submit} disabled={saving}>
+        {saving ? (
+          <ActivityIndicator color={colors.white} />
+        ) : (
+          <Text style={styles.btnText}>إرسال للمراجعة ←</Text>
+        )}
       </Pressable>
     </ScrollView>
   );
@@ -192,6 +208,7 @@ const styles = StyleSheet.create({
   warnRow: { flexDirection: 'row', gap: 8 },
   warnText: { flex: 1, fontSize: fontSize.sm, color: '#7A5A12', lineHeight: 22 },
   btn: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.sm },
+  btnDisabled: { opacity: 0.7 },
   btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
   error: { fontSize: fontSize.xs, color: colors.danger, marginTop: -spacing.sm, marginBottom: spacing.md },
 });

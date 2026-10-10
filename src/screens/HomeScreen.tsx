@@ -7,6 +7,7 @@ import { Dimensions, Image, Pressable, RefreshControl, ScrollView, StyleSheet, T
 import { AppIcon } from '../components/AppIcon';
 import { GovChips } from '../components/GovChips';
 import { PlaceholderImage } from '../components/PlaceholderImage';
+import { RemoteImage } from '../components/RemoteImage';
 import { useGov } from '../context/GovContext';
 import { useFavorites } from '../context/FavoritesContext';
 import { GOVS, SECTIONS, formatPrice, sectionName } from '../data';
@@ -180,7 +181,13 @@ export function HomeScreen({ navigation }: Props) {
     <Pressable key={store.id} onPress={() => goStore(store.id)}>
       <View style={styles.storeCard}>
         <View style={[styles.storeImgWrap, { backgroundColor: store.g1 + '1F' }]}>
-          <PlaceholderImage icon={store.icon} color={store.g1} size={72} />
+          <RemoteImage
+            uri={store.logoImage}
+            style={styles.storeLogo}
+            fallback={
+              <PlaceholderImage icon={store.icon} color={store.g1} size={72} />
+            }
+          />
           <View style={styles.storeBadge}>
             <AppIcon name="star" size={10} color={colors.white} />
             <Text style={styles.storeBadgeText}>مميز</Text>
@@ -444,6 +451,15 @@ const styles = StyleSheet.create({
     height: 110,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // الشعار المرفوع: دائري متداخل بنفس بصمة الـplaceholder
+  storeLogo: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 3,
+    borderColor: colors.white,
+    elevation: 2,
   },
   storeBadge: {
     position: 'absolute',

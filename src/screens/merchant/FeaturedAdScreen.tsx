@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
 import { ImagePickerField } from '../../components/ImagePickerField';
 import { useAuth } from '../../context/AuthContext';
@@ -23,6 +23,7 @@ export function FeaturedAdScreen({}: Props) {
   const repo = useRepo();
   const [bannerImg, setBannerImg] = useState<string[]>([]);
   const [receipt, setReceipt] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const settings = repo.getFeaturedSettings();
   const myRequests = useMemo(
@@ -42,7 +43,7 @@ export function FeaturedAdScreen({}: Props) {
     );
   }
 
-  const submit = () => {
+  const submit = async () => {
     if (!user || !user.storeId) return;
     if (bannerImg.length === 0) {
       Alert.alert('تنبيه', 'اختر صورة الإعلان أولًا');
@@ -52,15 +53,29 @@ export function FeaturedAdScreen({}: Props) {
       Alert.alert('تنبيه', 'اختر صورة الإيصال أولًا');
       return;
     }
-    repo.addFeaturedRequest({
-      storeId: user.storeId,
-      userId: user.id,
-      imageUri: bannerImg[0],
-      receiptUri: receipt[0],
-    });
-    setBannerImg([]);
-    setReceipt([]);
-    Alert.alert('تم', 'أُرسل طلب التمييز — تراجعه الإدارة ويظهر إعلانك بالبانر الرئيسي بعد الموافقة');
+    setSaving(true);
+    try {
+      const [imageUrl, receiptUrl] = await repo.uploadImages(
+        [...bannerImg, ...receipt],
+        'featured',
+      );
+      repo.addFeaturedRequest({
+        storeId: user.storeId,
+        userId: user.id,
+        imageUri: imageUrl,
+        receiptUri: receiptUrl,
+      });
+      setBannerImg([]);
+      setReceipt([]);
+      Alert.alert('تم', 'أُرسل طلب التمييز — تراجعه الإدارة ويظهر إعلانك بالبانر الرئيسي بعد الموافقة');
+    } catch {
+      Alert.alert(
+        'تعذر الإرسال',
+        'فشل رفع الصور — تحقق من اتصال الإنترنت وحاول مجددًا.',
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -93,11 +108,15 @@ export function FeaturedAdScreen({}: Props) {
         </>
       )}
 
-      <Pressable style={styles.btn} onPress={submit}>
-        <View style={styles.btnRow}>
-          <AppIcon name="upload" size={18} color={colors.white} />
-          <Text style={styles.btnText}>إرسال طلب التمييز</Text>
-        </View>
+      <Pressable style={[styles.btn, saving && styles.btnDisabled]} onPress={submit} disabled={saving}>
+        {saving ? (
+          <ActivityIndicator color={colors.white} />
+        ) : (
+          <View style={styles.btnRow}>
+            <AppIcon name="upload" size={18} color={colors.white} />
+            <Text style={styles.btnText}>إرسال طلب التمييز</Text>
+          </View>
+        )}
       </Pressable>
 
       <Text style={styles.listTitle}>طلباتي ({myRequests.length})</Text>
@@ -138,6 +157,7 @@ const styles = StyleSheet.create({
   stepRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.md, marginBottom: spacing.sm },
   stepText: { fontSize: fontSize.sm, fontWeight: '700', color: colors.text },
   btn: { backgroundColor: colors.gold, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.md },
+  btnDisabled: { opacity: 0.7 },
   btnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
   listTitle: { fontSize: fontSize.md, fontWeight: '800', color: colors.text, marginTop: spacing.xl, marginBottom: spacing.sm },

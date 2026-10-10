@@ -1,8 +1,9 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React from 'react';
-import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../components/AppIcon';
 import { PlaceholderImage } from '../components/PlaceholderImage';
+import { RemoteImage } from '../components/RemoteImage';
 import { useFavorites } from '../context/FavoritesContext';
 import { formatPrice, sectionName } from '../data';
 import { RootStackParamList } from '../navigation/types';
@@ -35,7 +36,7 @@ export function DetailScreen({ route }: Props) {
       {item.images && item.images.length > 0 ? (
         <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.galleryImgs}>
           {item.images.map(uri => (
-            <Image key={uri} source={{ uri }} style={styles.galleryImg} resizeMode="cover" />
+            <RemoteImage key={uri} uri={uri} style={styles.galleryImg} />
           ))}
           <Pressable style={styles.favBtn} onPress={() => toggle(item.id)}>
             <AppIcon name={fav ? 'heart' : 'heart-outline'} size={24} color={fav ? colors.danger : colors.textMuted} />

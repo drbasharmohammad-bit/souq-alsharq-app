@@ -2,7 +2,6 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
 import {
   Alert,
-  Image,
   Linking,
   Pressable,
   ScrollView,
@@ -12,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { AppIcon } from '../components/AppIcon';
+import { RemoteImage } from '../components/RemoteImage';
 import { useAuth } from '../context/AuthContext';
 import { formatDate } from '../utils/format';
 import { RootStackParamList } from '../navigation/types';
@@ -113,11 +113,7 @@ export function StoreDetailScreen({ navigation, route }: Props) {
       {/* الغلاف */}
       {store.coverImage ? (
         <View style={styles.coverImgWrap}>
-          <Image
-            source={{ uri: store.coverImage }}
-            style={styles.coverImg}
-            resizeMode="cover"
-          />
+          <RemoteImage uri={store.coverImage} style={styles.coverImg} />
           <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={8}>
             <AppIcon name="arrow-right" size={20} color={colors.primary} />
           </Pressable>
@@ -133,7 +129,15 @@ export function StoreDetailScreen({ navigation, route }: Props) {
 
       <View style={styles.head}>
         {store.logoImage ? (
-          <Image source={{ uri: store.logoImage }} style={styles.logoImg} resizeMode="cover" />
+          <RemoteImage
+            uri={store.logoImage}
+            style={styles.logoImg}
+            fallback={
+              <View style={[styles.logo, { backgroundColor: colors.gold }]}>
+                <Text style={styles.logoText}>{store.name.charAt(0)}</Text>
+              </View>
+            }
+          />
         ) : (
           <View style={[styles.logo, { backgroundColor: colors.gold }]}>
             <Text style={styles.logoText}>{store.name.charAt(0)}</Text>
@@ -250,7 +254,15 @@ export function StoreDetailScreen({ navigation, route }: Props) {
                   style={styles.pcard}
                   onPress={() => navigation.navigate('AdDetail', { productId: p.id })}>
                   {p.images.length > 0 ? (
-                    <Image source={{ uri: p.images[0] }} style={styles.pimg} resizeMode="cover" />
+                    <RemoteImage
+                      uri={p.images[0]}
+                      style={styles.pimg}
+                      fallback={
+                        <View style={[styles.pimg, styles.pimgPh]}>
+                          <AppIcon name="image" size={34} color={colors.textMuted} />
+                        </View>
+                      }
+                    />
                   ) : (
                     <View style={[styles.pimg, styles.pimgPh]}>
                       <AppIcon name="image" size={34} color={colors.textMuted} />

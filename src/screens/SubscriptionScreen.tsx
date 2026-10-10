@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../components/AppIcon';
 import { ImagePickerField } from '../components/ImagePickerField';
 import { useAuth } from '../context/AuthContext';
@@ -16,23 +16,36 @@ export function SubscriptionScreen() {
   const { user } = useAuth();
   const repo = useRepo();
   const [receipt, setReceipt] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const sub = user ? repo.getUserSubscription(user.id) : undefined;
 
-  const upload = () => {
+  const upload = async () => {
     if (!user) return;
     if (receipt.length === 0) {
       Alert.alert('تنبيه', 'اختر صورة الإيصال أولًا');
       return;
     }
-    repo.addSubscription({
-      userId: user.id,
-      storeId: user.storeId,
-      plan: 'monthly',
-      status: 'pending',
-      receiptUri: receipt[0],
-    });
-    setReceipt([]);
+    setSaving(true);
+    try {
+      const [receiptUrl] = await repo.uploadImages(receipt, 'subscriptions');
+      repo.addSubscription({
+        userId: user.id,
+        storeId: user.storeId,
+        plan: 'monthly',
+        status: 'pending',
+        receiptUri: receiptUrl,
+      });
+      setReceipt([]);
+      Alert.alert('تم', 'أُرسل الإيصال — تراجعه الإدارة ويُفعَّل اشتراكك خلال 24 ساعة');
+    } catch {
+      Alert.alert(
+        'تعذر الإرسال',
+        'فشل رفع صورة الإيصال — تحقق من اتصال الإنترنت وحاول مجددًا.',
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (user?.accountType !== 'merchant') {
@@ -108,11 +121,15 @@ export function SubscriptionScreen() {
 
       <ImagePickerField images={receipt} onChange={setReceipt} max={1} label="صورة الإيصال" />
 
-      <Pressable style={styles.btn} onPress={upload}>
-        <View style={styles.btnRow}>
-          <AppIcon name="upload" size={18} color={colors.white} />
-          <Text style={styles.btnText}>رفع إيصال</Text>
-        </View>
+      <Pressable style={[styles.btn, saving && styles.btnDisabled]} onPress={upload} disabled={saving}>
+        {saving ? (
+          <ActivityIndicator color={colors.white} />
+        ) : (
+          <View style={styles.btnRow}>
+            <AppIcon name="upload" size={18} color={colors.white} />
+            <Text style={styles.btnText}>رفع إيصال</Text>
+          </View>
+        )}
       </Pressable>
     </ScrollView>
   );
@@ -148,6 +165,7 @@ const styles = StyleSheet.create({
   stepTitle: { fontSize: fontSize.md, fontWeight: '700', color: colors.text },
   stepDesc: { fontSize: fontSize.sm, color: colors.textMuted, marginTop: 2 },
   btn: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.lg },
+  btnDisabled: { opacity: 0.7 },
   btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
   picked: { textAlign: 'center', color: colors.verifiedText, fontWeight: '700' },
   empty: { textAlign: 'center', color: colors.textMuted, fontSize: fontSize.md },

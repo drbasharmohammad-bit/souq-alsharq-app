@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
 import { FormField } from '../../components/FormField';
 import { ImagePickerField } from '../../components/ImagePickerField';
@@ -36,6 +36,7 @@ export function MedicalAdminScreen() {
   const [tab, setTab] = useState<Tab>('doctors');
   const [form, setForm] = useState<FormState>(EMPTY);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const set = (k: keyof FormState, v: string | boolean) =>
     setForm(prev => ({ ...prev, [k]: v } as FormState));
 
@@ -55,7 +56,7 @@ export function MedicalAdminScreen() {
     setEditingId(null);
   };
 
-  const save = () => {
+  const save = async () => {
     if (!form.name.trim() || !form.phone.trim()) {
       Alert.alert('تنبيه', 'الاسم ورقم الهاتف مطلوبان');
       return;
@@ -64,28 +65,44 @@ export function MedicalAdminScreen() {
       Alert.alert('تنبيه', 'الاختصاص مطلوب — أدخل اختصاص الطبيب (مثال: قلبية، أطفال، جلدية...)');
       return;
     }
-    if (tab === 'doctors') {
-      const d: Doctor = { name: form.name.trim(), spec: form.spec.trim(), gov: form.gov, area: form.area.trim() || form.gov, phone: form.phone.trim(), days: form.days.trim() || 'يوميًا', icon: 'doctor', photo: form.photo || undefined };
-      if (editingId) repo.updateDoctor(editingId, d);
-      else repo.addDoctor(d);
-    } else if (tab === 'pharms') {
-      const p: Pharmacy = { name: form.name.trim(), gov: form.gov, area: form.area.trim() || form.gov, phone: form.phone.trim(), hours: (form.hours.trim() || '8 صباحًا - 11 ليلًا') + (form.night ? ' (مناوبة ليلية)' : ''), photo: form.photo || undefined };
-      if (editingId) repo.updatePharmacy(editingId, p);
-      else repo.addPharmacy(p);
-    } else {
-      const hours = form.hours.trim() || 'يوميًا';
-      const l: Lab = {
-        name: form.name.trim(),
-        gov: form.gov,
-        area: form.area.trim() || form.gov,
-        phone: form.phone.trim(),
-        hours: form.tests.trim() ? `${hours} • تحاليل: ${form.tests.trim()}` : hours,
-        photo: form.photo || undefined,
-      };
-      if (editingId) repo.updateLab(editingId, l);
-      else repo.addLab(l);
+    setSaving(true);
+    try {
+      // رفع الصورة أولًا مع الانتظار — لا URI محلي في Firestore أبدًا
+      const [photoUrl] = await repo.uploadImages(
+        form.photo ? [form.photo] : [],
+        'medical',
+      );
+      const photo = photoUrl || undefined;
+      if (tab === 'doctors') {
+        const d: Doctor = { name: form.name.trim(), spec: form.spec.trim(), gov: form.gov, area: form.area.trim() || form.gov, phone: form.phone.trim(), days: form.days.trim() || 'يوميًا', icon: 'doctor', photo };
+        if (editingId) repo.updateDoctor(editingId, d);
+        else repo.addDoctor(d);
+      } else if (tab === 'pharms') {
+        const p: Pharmacy = { name: form.name.trim(), gov: form.gov, area: form.area.trim() || form.gov, phone: form.phone.trim(), hours: (form.hours.trim() || '8 صباحًا - 11 ليلًا') + (form.night ? ' (مناوبة ليلية)' : ''), photo };
+        if (editingId) repo.updatePharmacy(editingId, p);
+        else repo.addPharmacy(p);
+      } else {
+        const hours = form.hours.trim() || 'يوميًا';
+        const l: Lab = {
+          name: form.name.trim(),
+          gov: form.gov,
+          area: form.area.trim() || form.gov,
+          phone: form.phone.trim(),
+          hours: form.tests.trim() ? `${hours} • تحاليل: ${form.tests.trim()}` : hours,
+          photo,
+        };
+        if (editingId) repo.updateLab(editingId, l);
+        else repo.addLab(l);
+      }
+      reset();
+    } catch {
+      Alert.alert(
+        'تعذر الحفظ',
+        'فشل رفع الصورة — تحقق من اتصال الإنترنت وحاول مجددًا.',
+      );
+    } finally {
+      setSaving(false);
     }
-    reset();
   };
 
   const edit = (id: string) => {
@@ -188,8 +205,12 @@ export function MedicalAdminScreen() {
           <FormField label="تحاليل متوفرة" value={form.tests} onChange={v => set('tests', v)} placeholder="مثال: دم شامل، سكري..." />
         )}
         <View style={styles.formRow}>
-          <Pressable style={[styles.btn, styles.btnPrimary]} onPress={save}>
-            <Text style={styles.btnText}>{editingId ? 'حفظ التعديل' : 'إضافة'}</Text>
+          <Pressable style={[styles.btn, styles.btnPrimary, saving && styles.btnDisabled]} onPress={save} disabled={saving}>
+            {saving ? (
+              <ActivityIndicator color={colors.white} />
+            ) : (
+              <Text style={styles.btnText}>{editingId ? 'حفظ التعديل' : 'إضافة'}</Text>
+            )}
           </Pressable>
           {editingId ? (
             <Pressable style={[styles.btn, styles.btnGhost]} onPress={reset}>
@@ -232,6 +253,7 @@ const styles = StyleSheet.create({
   formRow: { flexDirection: 'row', gap: spacing.md },
   btn: { flex: 1, borderRadius: radius.md, padding: spacing.md, alignItems: 'center' },
   btnPrimary: { backgroundColor: colors.primary },
+  btnDisabled: { opacity: 0.7 },
   btnGhost: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
   btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
   btnGhostText: { color: colors.text, fontWeight: '700', fontSize: fontSize.md },

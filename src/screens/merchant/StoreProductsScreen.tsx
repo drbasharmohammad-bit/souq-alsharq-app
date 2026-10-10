@@ -1,8 +1,9 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
-import { Alert, FlatList, Image, Modal, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Modal, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
 import { FabButton } from '../../components/FabButton';
+import { RemoteImage } from '../../components/RemoteImage';
 import { useAuth, useMyStore } from '../../context/AuthContext';
 import { formatPrice } from '../../data';
 import { RootStackParamList } from '../../navigation/types';
@@ -112,7 +113,15 @@ export function StoreProductsScreen({ navigation }: Props) {
   const renderProduct = ({ item }: { item: Product }) => (
     <View style={styles.card}>
       {item.images.length > 0 ? (
-        <Image source={{ uri: item.images[0] }} style={styles.thumb} />
+        <RemoteImage
+          uri={item.images[0]}
+          style={styles.thumb}
+          fallback={
+            <View style={[styles.thumb, styles.thumbEmpty]}>
+              <AppIcon name="package-variant" size={30} color={colors.primary} />
+            </View>
+          }
+        />
       ) : (
         <View style={[styles.thumb, styles.thumbEmpty]}>
           <AppIcon name="package-variant" size={30} color={colors.primary} />

@@ -131,4 +131,11 @@ export interface Repository {
   ): void;
   getFeaturedSettings(): FeaturedSettings;
   updateFeaturedSettings(s: FeaturedSettings): void;
+
+  /**
+   * يرفع صورًا محلية إلى Cloudinary وينتظر اكتمال الرفع.
+   * الروابط https تُمرَّر كما هي بلا إعادة رفع.
+   * يرمي خطأً واضحًا عند الفشل — لا فشل صامت.
+   */
+  uploadImages(uris: string[], folder: string): Promise<string[]>;
 }

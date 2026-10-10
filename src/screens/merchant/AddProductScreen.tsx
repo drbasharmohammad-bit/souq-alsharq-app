@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
 import { FormField } from '../../components/FormField';
 import { ImagePickerField } from '../../components/ImagePickerField';
@@ -24,8 +24,9 @@ export function AddProductScreen({ navigation }: Props) {
   const [images, setImages] = useState<string[]>([]);
   const [categoryId, setCategoryId] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
 
-  const save = () => {
+  const save = async () => {
     const e: Record<string, string> = {};
     if (!name.trim()) e.name = 'اسم الصنف مطلوب';
     if (!desc.trim()) e.desc = 'وصف الصنف مطلوب';
@@ -39,19 +40,31 @@ export function AddProductScreen({ navigation }: Props) {
       Alert.alert('خطأ', 'تعذر تحديد المتجر');
       return;
     }
-    const priceNum = price.trim() ? parseInt(price.replace(/[^\d]/g, ''), 10) : null;
-    repo.addProduct({
-      storeId: store.id,
-      name: name.trim(),
-      price: Number.isFinite(priceNum) ? priceNum : null,
-      description: desc.trim(),
-      images,
-      governorate: store.gov,
-      categoryId: categoryId || undefined,
-    });
-    Alert.alert('تم', 'أُضيف الصنف إلى متجرك', [
-      { text: 'حسنًا', onPress: () => navigation.goBack() },
-    ]);
+    setSaving(true);
+    try {
+      // رفع الصور أولًا مع الانتظار — لا URI محلي في Firestore أبدًا
+      const urls = await repo.uploadImages(images, 'products');
+      const priceNum = price.trim() ? parseInt(price.replace(/[^\d]/g, ''), 10) : null;
+      repo.addProduct({
+        storeId: store.id,
+        name: name.trim(),
+        price: Number.isFinite(priceNum) ? priceNum : null,
+        description: desc.trim(),
+        images: urls,
+        governorate: store.gov,
+        categoryId: categoryId || undefined,
+      });
+      Alert.alert('تم', 'أُضيف الصنف إلى متجرك', [
+        { text: 'حسنًا', onPress: () => navigation.goBack() },
+      ]);
+    } catch {
+      Alert.alert(
+        'تعذر الحفظ',
+        'فشل رفع الصور إلى الخادم — تحقق من اتصال الإنترنت وحاول مجددًا.',
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (user?.accountType !== 'merchant' || !store) {
@@ -75,9 +88,15 @@ export function AddProductScreen({ navigation }: Props) {
         value={categoryId}
         onChange={setCategoryId}
       />
-      <Pressable style={styles.btn} onPress={save}>
-        <AppIcon name="plus" size={18} color={colors.white} />
-        <Text style={styles.btnText}>إضافة الصنف</Text>
+      <Pressable style={[styles.btn, saving && styles.btnDisabled]} onPress={save} disabled={saving}>
+        {saving ? (
+          <ActivityIndicator color={colors.white} />
+        ) : (
+          <>
+            <AppIcon name="plus" size={18} color={colors.white} />
+            <Text style={styles.btnText}>إضافة الصنف</Text>
+          </>
+        )}
       </Pressable>
     </ScrollView>
   );
@@ -122,6 +141,7 @@ const styles = StyleSheet.create({
   sub: { fontSize: fontSize.md, fontWeight: '700', color: colors.text, marginBottom: spacing.lg, textAlign: 'center' },
   empty: { textAlign: 'center', marginTop: 60, color: colors.textMuted, fontSize: fontSize.md },
   btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.sm },
+  btnDisabled: { opacity: 0.7 },
   btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
   error: { fontSize: fontSize.xs, color: colors.danger, marginTop: -spacing.sm, marginBottom: spacing.md },
   chipsWrap: { marginBottom: spacing.md },

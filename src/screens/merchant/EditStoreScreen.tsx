@@ -45,26 +45,37 @@ export function EditStoreScreen({ navigation }: Props) {
     );
   }
 
-  const save = () => {
+  const save = async () => {
     if (!name.trim()) {
       Alert.alert('تنبيه', 'اسم المتجر مطلوب');
       return;
     }
     setSaving(true);
     try {
-      // URIs المحلية تُرفع تلقائيًا إلى Cloudinary داخل updateStore
+      // 1) رفع الصور المحلية إلى Cloudinary أولًا مع الانتظار الحقيقي —
+      //    لا يُكتب أي URI محلي في Firestore أبدًا.
+      const [coverUrl, logoUrl] = await repo.uploadImages(
+        [cover[0] ?? '', logo[0] ?? ''],
+        'stores',
+      );
+      // 2) حفظ النصوص + روابط https النهائية
       repo.updateStore(store.id, {
         name: name.trim(),
         description: desc.trim(),
         hours: hours.trim(),
         phone: phone.trim(),
         area: area.trim() || store.area,
-        coverImage: cover[0] ?? '',
-        logoImage: logo[0] ?? '',
+        coverImage: coverUrl,
+        logoImage: logoUrl,
       });
       Alert.alert('تم الحفظ', 'تم تحديث بيانات متجرك بنجاح', [
         { text: 'حسنًا', onPress: () => navigation.goBack() },
       ]);
+    } catch {
+      Alert.alert(
+        'تعذر الحفظ',
+        'فشل رفع الصور إلى الخادم — تحقق من اتصال الإنترنت وحاول مجددًا.',
+      );
     } finally {
       setSaving(false);
     }

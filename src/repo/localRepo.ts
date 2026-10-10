@@ -163,6 +163,11 @@ export class LocalRepo implements Repository {
     }
   }
 
+  /** نسخة محلية: لا رفع سحابي — تُعيد الـURIs كما هي. */
+  async uploadImages(uris: string[]): Promise<string[]> {
+    return [...uris];
+  }
+
   // ——— تصنيفات داخل المتجر (v8) ———
   getCategoriesByStore(storeId: string): StoreCategory[] {
     return this.categories
