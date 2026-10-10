@@ -2,6 +2,7 @@ import {
   DOCTORS,
   LABS,
   LISTINGS,
+  MERCHANT_ONLY_SECTIONS,
   PHARMS,
   STORES,
 } from '../data';
@@ -114,6 +115,13 @@ export class LocalRepo implements Repository {
   }
 
   addListing(input: NewListingInput): Listing {
+    // دفاع: الحساب الفردي ممنوع من قسمی المطاعم والمتاجر (قرار الإدارة)
+    if (
+      input.sellerType === 'individual' &&
+      MERCHANT_ONLY_SECTIONS.includes(input.sec)
+    ) {
+      throw new Error('individual listing in merchant-only section');
+    }
     const listing: Listing = {
       ...input,
       id: nid('u'),

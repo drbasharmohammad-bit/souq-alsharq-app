@@ -13,6 +13,7 @@ import {
   DOCTORS,
   LABS,
   LISTINGS,
+  MERCHANT_ONLY_SECTIONS,
   PHARMS,
   STORES,
 } from '../data';
@@ -600,6 +601,13 @@ export class FirestoreRepo implements Repository {
   }
 
   addListing(input: NewListingInput): Listing {
+    // دفاع: الحساب الفردي ممنوع من قسمی المطاعم والمتاجر (قرار الإدارة)
+    if (
+      input.sellerType === 'individual' &&
+      MERCHANT_ONLY_SECTIONS.includes(input.sec)
+    ) {
+      throw new Error('individual listing in merchant-only section');
+    }
     const refDoc = doc(collection(this.db, C.listings));
     const listing: Listing = {
       ...input,

@@ -2,14 +2,25 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
-import { SECTIONS, SUBCATS } from '../../data';
+import { useAuth } from '../../context/AuthContext';
+import { MERCHANT_ONLY_SECTIONS, SECTIONS, SUBCATS } from '../../data';
 import { RootStackParamList } from '../../navigation/types';
 import { colors, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PublishSection'>;
 
-// اختيار القسم — الطبي ممنوع (إدارة حصرًا)
+// اختيار القسم:
+// - الطبي مقفل للجميع (إدارة حصرًا).
+// - قسما المطاعم والمتاجر مخفيان نهائيًا عن الحساب الفردي (قرار الإدارة) —
+//   يظهران فقط للتاجر والإدارة. المنع على النشر فقط، والتصفح مفتوح للجميع.
 export function PublishSectionScreen({ navigation }: Props) {
+  const { user } = useAuth();
+  const canPublishMerchantSections =
+    user?.isAdmin === true || user?.accountType === 'merchant';
+  const visibleSections = SECTIONS.filter(
+    s => canPublishMerchantSections || !MERCHANT_ONLY_SECTIONS.includes(s.key),
+  );
+
   const pick = (key: string) => {
     if (key === 'medical') {
       Alert.alert(
@@ -25,7 +36,7 @@ export function PublishSectionScreen({ navigation }: Props) {
     <View style={styles.root}>
       <Text style={styles.title}>اختر القسم</Text>
       <FlatList
-        data={SECTIONS}
+        data={visibleSections}
         keyExtractor={s => s.key}
         numColumns={2}
         contentContainerStyle={styles.grid}

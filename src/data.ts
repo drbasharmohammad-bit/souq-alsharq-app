@@ -1,4 +1,4 @@
-import { Doctor, Lab, Listing, Pharmacy, Section, Store, SubCategory } from './types';
+import { Doctor, Lab, Listing, Pharmacy, Section, SectionKey, Store, SubCategory } from './types';
 
 // بيانات البذور — الـRepository يضيف الحقول التشغيلية (status/createdAt)
 type SeedListing = Omit<Listing, 'status' | 'createdAt'>;
@@ -13,6 +13,9 @@ export const SECTIONS: Section[] = [
   { key: 'malls', name: 'مولات ومتاجر', icon: 'storefront', g1: '#7A4A1F', g2: '#D9A441' },
   { key: 'services', name: 'خدمات وحرف', icon: 'tools', g1: '#5B4A8A', g2: '#9A8AD1' },
 ];
+
+// أقسام التجار فقط — الحساب الفردي ممنوع من النشر فيها (قرار الإدارة)
+export const MERCHANT_ONLY_SECTIONS: SectionKey[] = ['food', 'malls'];
 
 export const SUBCATS: Record<string, SubCategory[]> = {
   cars: [

@@ -6,7 +6,7 @@ import { FormField } from '../../components/FormField';
 import { ImagePickerField } from '../../components/ImagePickerField';
 import { SelectChips } from '../../components/SelectChips';
 import { useAuth } from '../../context/AuthContext';
-import { GOVS, SUBCATS, sectionName } from '../../data';
+import { GOVS, MERCHANT_ONLY_SECTIONS, SUBCATS, sectionName } from '../../data';
 import { RootStackParamList } from '../../navigation/types';
 import { useRepo } from '../../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../../theme';
@@ -73,6 +73,16 @@ export function PublishFormScreen({ navigation, route }: Props) {
       return;
     }
     if (!user || !sub) return;
+
+    // دفاع: الحساب الفردي ممنوع من قسمی المطاعم والمتاجر (قرار الإدارة)
+    if (
+      user.accountType === 'individual' &&
+      user.isAdmin !== true &&
+      (MERCHANT_ONLY_SECTIONS as string[]).includes(sectionKey)
+    ) {
+      Alert.alert('غير مسموح', 'هذا القسم مخصص لأصحاب المتاجر.');
+      return;
+    }
 
     const isMerchant = user.accountType === 'merchant';
     const store = isMerchant && user.storeId ? repo.getStoreById(user.storeId) : undefined;
