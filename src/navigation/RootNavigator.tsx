@@ -7,6 +7,7 @@ import { AuthProvider } from '../context/AuthContext';
 import { FavoritesProvider } from '../context/FavoritesContext';
 import { GovProvider } from '../context/GovContext';
 import { RepoProvider } from '../repo/RepoContext';
+import { OtaProvider } from '../ota/OtaContext';
 import { MedicalAdminScreen } from '../screens/admin/MedicalAdminScreen';
 import { AdminDashboardScreen } from '../screens/admin/AdminDashboardScreen';
 import { AdminScreen } from '../screens/admin/AdminScreen';
@@ -124,14 +125,16 @@ function AppRoot() {
 
 export function RootNavigator() {
   return (
-    <RepoProvider>
-      <GovProvider>
-      <AuthProvider>
-        <FavoritesProvider>
-          <AppRoot />
-        </FavoritesProvider>
-      </AuthProvider>
-      </GovProvider>
-    </RepoProvider>
+    <OtaProvider>
+      <RepoProvider>
+        <GovProvider>
+        <AuthProvider>
+          <FavoritesProvider>
+            <AppRoot />
+          </FavoritesProvider>
+        </AuthProvider>
+        </GovProvider>
+      </RepoProvider>
+    </OtaProvider>
   );
 }

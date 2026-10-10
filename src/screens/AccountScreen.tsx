@@ -5,6 +5,7 @@ import React from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../components/AppIcon';
 import { PlaceholderImage } from '../components/PlaceholderImage';
+import { OtaSection } from '../ota/OtaSection';
 import { useAuth, useMyStore } from '../context/AuthContext';
 import { TabsParamList, RootStackParamList } from '../navigation/types';
 import { colors, fontSize, radius, spacing } from '../theme';
@@ -53,6 +54,8 @@ export function AccountScreen({ navigation }: Props) {
             <Text style={styles.typeDesc}>انشر إعلاناتك في أي قسم — مجانًا</Text>
           </View>
         </View>
+
+        <OtaSection />
       </ScrollView>
     );
   }
@@ -119,6 +122,8 @@ export function AccountScreen({ navigation }: Props) {
         )}
         <Row icon="logout" label="تسجيل الخروج" onPress={doLogout} danger />
       </View>
+
+      <OtaSection />
     </ScrollView>
   );
 }

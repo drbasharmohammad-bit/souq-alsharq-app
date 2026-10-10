@@ -17,6 +17,8 @@ class MainApplication : Application(), ReactApplication {
           // Packages that cannot be autolinked yet can be added manually here, for example:
           // add(MyReactNativePackage())
         },
+      // التحديث الهوائي: إن وُجدت حزمة OTA صالحة تُستخدم بدل المدمجة في الـAPK
+      jsBundleFilePath = OtaBundle.getBundlePath(applicationContext),
     )
   }
 
