@@ -82,7 +82,7 @@ android {
         applicationId "sy.medpro.sharq"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode (System.getenv("APP_VERSION_CODE") ?: "1").toInteger()
+        versionCode 1
         versionName "1.0"
     }
     signingConfigs {

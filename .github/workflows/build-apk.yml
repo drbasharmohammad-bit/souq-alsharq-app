@@ -11,7 +11,6 @@ jobs:
     env:
       SHARQ_STORE_PASSWORD: LuHyPG9uI5tE7SEJSYUf
       SHARQ_KEY_PASSWORD: LuHyPG9uI5tE7SEJSYUf
-      APP_VERSION_CODE: ${{ github.run_number }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,6 +32,10 @@ jobs:
 
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses > /dev/null || true
+
+      - name: Set version code from build number
+        working-directory: android
+        run: sed -i "s/^\(\s*\)versionCode 1/\1versionCode ${{ github.run_number }}/" app/build.gradle && grep -n "versionCode" app/build.gradle
 
       - name: Build release APK
         working-directory: android
