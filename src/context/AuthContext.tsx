@@ -32,6 +32,36 @@ function ensureGoogleConfigured() {
 
 const normEmail = (e?: string | null) => (e ?? '').trim().toLowerCase();
 
+// بناء كائن User من مستند Firestore مباشرة — يُستخدم عندما يكون المستند
+// موجودًا لكن غائبًا عن كاش الـrepo (غير مُزامَن عند الإقلاع)
+function userFromSnapshot(
+  fuser: { uid: string; email?: string | null; displayName?: string | null },
+  data: { [key: string]: any },
+): User {
+  const email = (data.email as string | undefined) ?? fuser.email ?? undefined;
+  const accountType: AccountType = data.accountType === 'merchant' ? 'merchant' : 'individual';
+  const isAdmin = data.isAdmin === true || normEmail(email) === normEmail(ADMIN_EMAIL);
+  const rawCreated = data.createdAt;
+  const createdAt =
+    typeof rawCreated === 'number'
+      ? rawCreated
+      : typeof rawCreated?.toMillis === 'function'
+        ? rawCreated.toMillis()
+        : Date.now();
+  return {
+    id: fuser.uid,
+    uid: fuser.uid,
+    email,
+    displayName: (data.displayName as string | undefined) ?? fuser.displayName ?? undefined,
+    phone: (data.phone as string | undefined) ?? '',
+    accountType,
+    storeId: (data.storeId as string | undefined) ?? undefined,
+    isAdmin,
+    blocked: data.blocked === true,
+    createdAt,
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const repo = useRepo();
   const [user, setUser] = useState<User | null>(null);
@@ -62,9 +92,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         setNeedsProfile(false);
       } else {
-        // مستخدم جوجل جديد — لا يوجد مستند users/{uid} → إكمال الملف
-        setUser(null);
-        setNeedsProfile(true);
+        // المستند قد يكون موجودًا لكن الكاش غير مُزامَن — تحقق مباشر من Firestore قبل الحكم
+        let snapUser: User | null = null;
+        try {
+          const snap = await getDoc(doc(getFirestore(), 'users', fuser.uid));
+          if (snap.exists()) {
+            snapUser = userFromSnapshot(fuser, snap.data() as { [key: string]: any });
+          }
+        } catch {
+          snapUser = null;
+        }
+        if (snapUser) {
+          if (snapUser.blocked) {
+            // المحظور تُنهى جلسته فورًا
+            try { await signOut(getAuth()); } catch { /* تجاهل */ }
+            try { await GoogleSignin.signOut(); } catch { /* تجاهل */ }
+            setUser(null);
+          } else {
+            setUser(snapUser);
+          }
+          setNeedsProfile(false);
+        } else {
+          // مستخدم جوجل جديد فعلًا — لا يوجد مستند users/{uid} → إكمال الملف
+          setUser(null);
+          setNeedsProfile(true);
+        }
       }
       setLoading(false);
     });
@@ -91,20 +143,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('انتهت جلسة جوجل — سجّل الدخول مجددًا');
       }
       // فحص دفاعي: تحقق من وجود المستند مباشرة في Firestore قبل الإنشاء
-      let exists = false;
+      let snap: { exists: () => boolean; data: () => unknown } | null = null;
       try {
-        const snap = await getDoc(doc(getFirestore(), 'users', fuser.uid));
-        exists = snap.exists();
+        const s = await getDoc(doc(getFirestore(), 'users', fuser.uid));
+        if (s.exists()) snap = s as { exists: () => boolean; data: () => unknown };
       } catch {
-        exists = false;
+        snap = null;
       }
-      if (exists) {
-        const u = repoRef.current.getUsers().find(x => x.uid === fuser.uid);
-        if (u) {
-          setUser(u);
-          setNeedsProfile(false);
-          return u;
-        }
+      if (snap) {
+        // المستند موجود: ابنِ المستخدم من الـsnapshot مباشرة (تجنّب مكرر عند غياب الكاش)
+        const u =
+          repoRef.current.getUsers().find(x => x.uid === fuser.uid) ??
+          userFromSnapshot(fuser, snap.data() as { [key: string]: any });
+        setUser(u);
+        setNeedsProfile(false);
+        return u;
       }
       const isAdmin = normEmail(fuser.email) === normEmail(ADMIN_EMAIL);
       const u = repoRef.current.addUser(
