@@ -9,8 +9,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      SHARQ_STORE_PASSWORD: LuHyPG9uI5tE7SEJSYUf
-      SHARQ_KEY_PASSWORD: LuHyPG9uI5tE7SEJSYUf
+      SHARQ_STORE_PASSWORD: ${{ secrets.SHARQ_STORE_PASSWORD }}
+      SHARQ_KEY_PASSWORD: ${{ secrets.SHARQ_KEY_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,6 +37,13 @@ jobs:
       - name: Set version code from build number
         working-directory: android
         run: sed -i "s/^\(\s*\)versionCode 1/\1versionCode ${{ github.run_number }}/" app/build.gradle && grep -n "versionCode" app/build.gradle
+
+      - name: Restore release keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.SHARQ_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > android/app/souq-alsharq.keystore
+          ls -la android/app/souq-alsharq.keystore
 
       - name: Build release APK
         working-directory: android
