@@ -106,6 +106,9 @@ export function AccountScreen({ navigation }: Props) {
           <Row icon="package-variant" label="أصناف متجري" onPress={() => navigation.navigate('StoreProducts')} />
         )}
         {isMerchant && (
+          <Row icon="store-edit" label="تعديل المتجر" onPress={() => navigation.navigate('EditStore')} />
+        )}
+        {isMerchant && (
           <Row icon="credit-card" label="اشتراك المتجر" onPress={() => navigation.navigate('Subscription')} />
         )}
         {isMerchant && (

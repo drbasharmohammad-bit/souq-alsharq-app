@@ -14,6 +14,7 @@ import {
   Review,
   SectionKey,
   Store,
+  StoreCategory,
   Subscription,
   User,
 } from '../types';
@@ -24,6 +25,7 @@ export type NewStoreInput = Omit<Store, 'id'>;
 export type NewUserInput = Omit<User, 'id' | 'createdAt' | 'isAdmin'>;
 export type NewSubscriptionInput = Omit<Subscription, 'id' | 'createdAt'>;
 export type NewProductInput = Omit<Product, 'id' | 'createdAt'>;
+export type NewStoreCategoryInput = Omit<StoreCategory, 'id' | 'createdAt'>;
 export type NewAnnouncementInput = Omit<Announcement, 'id' | 'createdAt'>;
 export type NewBannerInput = Omit<Banner, 'id' | 'createdAt' | 'active'>;
 export type NewFeaturedRequestInput = Omit<
@@ -58,6 +60,14 @@ export interface Repository {
   getStores(gov?: string): Store[];
   getStoreById(id: string): Store | undefined;
   addStore(input: NewStoreInput): Store;
+  updateStore(id: string, patch: Partial<Store>): void;
+
+  // تصنيفات داخل المتجر (ينشئها التاجر) — v8
+  getCategoriesByStore(storeId: string): StoreCategory[];
+  addCategory(input: NewStoreCategoryInput): StoreCategory;
+  updateCategory(id: string, name: string): void;
+  deleteCategory(id: string): void;
+  assignProductCategory(productId: string, categoryId?: string): void;
 
   // تقييمات المتاجر
   getReviews(storeId: string): Review[];

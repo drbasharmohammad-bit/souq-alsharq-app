@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../components/AppIcon';
 import { GovChips } from '../components/GovChips';
 import { PlaceholderImage } from '../components/PlaceholderImage';
@@ -44,6 +44,14 @@ export function MedicalScreen() {
 
   const call = (phone: string) => Linking.openURL(`tel:${phone.replace(/\s/g, '')}`);
 
+  // صورة السجل إن وُجدت (دائرية بنفس الحجم) — وإلا الـPlaceholder كبديل
+  const avatar = (photo: string | undefined, icon: string, color: string) =>
+    photo ? (
+      <Image source={{ uri: photo }} style={styles.avatar} />
+    ) : (
+      <PlaceholderImage icon={icon} color={color} size={60} />
+    );
+
   return (
     <View style={styles.root}>
       {/* شارة التوثيق */}
@@ -86,7 +94,7 @@ export function MedicalScreen() {
           maxToRenderPerBatch={8}
           renderItem={({ item }) => (
             <View style={styles.card}>
-              <PlaceholderImage icon="doctor" color={colors.info} size={60} />
+              {avatar(item.photo, 'doctor', colors.info)}
               <View style={styles.body}>
                 <Text style={styles.name}>{item.name}</Text>
                 <Text style={styles.specTag}>{item.spec}</Text>
@@ -118,7 +126,7 @@ export function MedicalScreen() {
           initialNumToRender={8}
           renderItem={({ item }) => (
             <View style={styles.card}>
-              <PlaceholderImage icon="pill" color={colors.gold} size={60} />
+              {avatar(item.photo, 'pill', colors.gold)}
               <View style={styles.body}>
                 <Text style={styles.name}>{item.name}</Text>
                 <View style={styles.metaRow}>
@@ -149,7 +157,7 @@ export function MedicalScreen() {
           initialNumToRender={8}
           renderItem={({ item }) => (
             <View style={styles.card}>
-              <PlaceholderImage icon="test-tube" color="#0F4C5C" size={60} />
+              {avatar(item.photo, 'test-tube', '#0F4C5C')}
               <View style={styles.body}>
                 <Text style={styles.name}>{item.name}</Text>
                 <View style={styles.metaRow}>
@@ -188,6 +196,7 @@ const styles = StyleSheet.create({
   tabTextActive: { color: colors.white, fontWeight: '800' },
   list: { padding: spacing.md, paddingTop: spacing.sm },
   card: { flexDirection: 'row', backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md, alignItems: 'center', elevation: 1 },
+  avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.border },
   body: { flex: 1, marginStart: spacing.md },
   name: { fontSize: fontSize.md, fontWeight: '800', color: colors.text },
   specTag: { alignSelf: 'flex-start', backgroundColor: colors.individualBg, color: colors.individualText, fontSize: fontSize.xs, fontWeight: '700', borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 2, marginTop: 4 },

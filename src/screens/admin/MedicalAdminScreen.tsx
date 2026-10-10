@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
 import { FormField } from '../../components/FormField';
+import { ImagePickerField } from '../../components/ImagePickerField';
 import { SelectChips } from '../../components/SelectChips';
 import { useAuth } from '../../context/AuthContext';
 import { GOVS } from '../../data';
@@ -22,10 +23,11 @@ interface FormState {
   hours: string;
   tests: string;
   night: boolean;
+  photo: string;
 }
 
 const EMPTY: FormState = {
-  name: '', spec: '', gov: 'الحسكة', area: '', phone: '', days: '', hours: '', tests: '', night: false,
+  name: '', spec: '', gov: 'الحسكة', area: '', phone: '', days: '', hours: '', tests: '', night: false, photo: '',
 };
 
 export function MedicalAdminScreen() {
@@ -63,11 +65,11 @@ export function MedicalAdminScreen() {
       return;
     }
     if (tab === 'doctors') {
-      const d: Doctor = { name: form.name.trim(), spec: form.spec.trim(), gov: form.gov, area: form.area.trim() || form.gov, phone: form.phone.trim(), days: form.days.trim() || 'يوميًا', icon: 'doctor' };
+      const d: Doctor = { name: form.name.trim(), spec: form.spec.trim(), gov: form.gov, area: form.area.trim() || form.gov, phone: form.phone.trim(), days: form.days.trim() || 'يوميًا', icon: 'doctor', photo: form.photo || undefined };
       if (editingId) repo.updateDoctor(editingId, d);
       else repo.addDoctor(d);
     } else if (tab === 'pharms') {
-      const p: Pharmacy = { name: form.name.trim(), gov: form.gov, area: form.area.trim() || form.gov, phone: form.phone.trim(), hours: (form.hours.trim() || '8 صباحًا - 11 ليلًا') + (form.night ? ' (مناوبة ليلية)' : '') };
+      const p: Pharmacy = { name: form.name.trim(), gov: form.gov, area: form.area.trim() || form.gov, phone: form.phone.trim(), hours: (form.hours.trim() || '8 صباحًا - 11 ليلًا') + (form.night ? ' (مناوبة ليلية)' : ''), photo: form.photo || undefined };
       if (editingId) repo.updatePharmacy(editingId, p);
       else repo.addPharmacy(p);
     } else {
@@ -78,6 +80,7 @@ export function MedicalAdminScreen() {
         area: form.area.trim() || form.gov,
         phone: form.phone.trim(),
         hours: form.tests.trim() ? `${hours} • تحاليل: ${form.tests.trim()}` : hours,
+        photo: form.photo || undefined,
       };
       if (editingId) repo.updateLab(editingId, l);
       else repo.addLab(l);
@@ -89,13 +92,13 @@ export function MedicalAdminScreen() {
     setEditingId(id);
     if (tab === 'doctors') {
       const d = repo.getDoctors().find(x => x.id === id);
-      if (d) setForm({ ...EMPTY, name: d.name, spec: d.spec, gov: d.gov, area: d.area, phone: d.phone, days: d.days });
+      if (d) setForm({ ...EMPTY, name: d.name, spec: d.spec, gov: d.gov, area: d.area, phone: d.phone, days: d.days, photo: d.photo ?? '' });
     } else if (tab === 'pharms') {
       const p = repo.getPharmacies().find(x => x.id === id);
-      if (p) setForm({ ...EMPTY, name: p.name, gov: p.gov, area: p.area, phone: p.phone, hours: p.hours });
+      if (p) setForm({ ...EMPTY, name: p.name, gov: p.gov, area: p.area, phone: p.phone, hours: p.hours, photo: p.photo ?? '' });
     } else {
       const l = repo.getLabs().find(x => x.id === id);
-      if (l) setForm({ ...EMPTY, name: l.name, gov: l.gov, area: l.area, phone: l.phone, hours: l.hours });
+      if (l) setForm({ ...EMPTY, name: l.name, gov: l.gov, area: l.area, phone: l.phone, hours: l.hours, photo: l.photo ?? '' });
     }
   };
 
@@ -162,6 +165,12 @@ export function MedicalAdminScreen() {
         <SelectChips label="المحافظة" options={GOVS.filter(g => g !== 'الكل')} value={form.gov} onChange={v => set('gov', v)} />
         <FormField label="العنوان" value={form.area} onChange={v => set('area', v)} placeholder="الحي - الشارع" />
         <FormField label="الهاتف" value={form.phone} onChange={v => set('phone', v)} keyboardType="phone-pad" required />
+        <ImagePickerField
+          images={form.photo ? [form.photo] : []}
+          onChange={uris => set('photo', uris[0] ?? '')}
+          max={1}
+          label={tab === 'doctors' ? 'صورة الطبيب' : tab === 'pharms' ? 'صورة الصيدلية' : 'صورة المخبر'}
+        />
         {tab === 'doctors' ? (
           <FormField label="أوقات الدوام" value={form.days} onChange={v => set('days', v)} placeholder="مثال: السبت - الخميس" />
         ) : (

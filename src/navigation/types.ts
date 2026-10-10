@@ -29,6 +29,7 @@ export type RootStackParamList = {
   // منتجات التاجر
   StoreProducts: undefined;
   AddProduct: undefined;
+  EditStore: undefined;
   // المرحلة 2: الاشتراك والإدارة
   Subscription: undefined;
   Admin: undefined;

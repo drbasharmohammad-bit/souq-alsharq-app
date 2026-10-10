@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '../../components/AppIcon';
 import { FormField } from '../../components/FormField';
 import { ImagePickerField } from '../../components/ImagePickerField';
@@ -8,6 +8,7 @@ import { useAuth, useMyStore } from '../../context/AuthContext';
 import { RootStackParamList } from '../../navigation/types';
 import { useRepo } from '../../repo/RepoContext';
 import { colors, fontSize, radius, spacing } from '../../theme';
+import { StoreCategory } from '../../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddProduct'>;
 
@@ -21,6 +22,7 @@ export function AddProductScreen({ navigation }: Props) {
   const [price, setPrice] = useState('');
   const [desc, setDesc] = useState('');
   const [images, setImages] = useState<string[]>([]);
+  const [categoryId, setCategoryId] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const save = () => {
@@ -45,6 +47,7 @@ export function AddProductScreen({ navigation }: Props) {
       description: desc.trim(),
       images,
       governorate: store.gov,
+      categoryId: categoryId || undefined,
     });
     Alert.alert('تم', 'أُضيف الصنف إلى متجرك', [
       { text: 'حسنًا', onPress: () => navigation.goBack() },
@@ -67,11 +70,49 @@ export function AddProductScreen({ navigation }: Props) {
       <FormField label="الوصف" value={desc} onChange={setDesc} placeholder="تفاصيل الصنف..." multiline required error={errors.desc} />
       <ImagePickerField images={images} onChange={setImages} max={6} label="صور الصنف" />
       {errors.images ? <Text style={styles.error}>{errors.images}</Text> : null}
+      <CategoryChips
+        categories={repo.getCategoriesByStore(store.id)}
+        value={categoryId}
+        onChange={setCategoryId}
+      />
       <Pressable style={styles.btn} onPress={save}>
         <AppIcon name="plus" size={18} color={colors.white} />
         <Text style={styles.btnText}>إضافة الصنف</Text>
       </Pressable>
     </ScrollView>
+  );
+}
+
+// شرائح اختيار التصنيف — اختيارية (v8)
+function CategoryChips({
+  categories,
+  value,
+  onChange,
+}: {
+  categories: StoreCategory[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  if (categories.length === 0) return null;
+  return (
+    <View style={styles.chipsWrap}>
+      <Text style={styles.chipsLabel}>التصنيف (اختياري)</Text>
+      <View style={styles.chipsRow}>
+        <Pressable
+          onPress={() => onChange('')}
+          style={[styles.chip, value === '' && styles.chipActive]}>
+          <Text style={[styles.chipText, value === '' && styles.chipTextActive]}>بدون تصنيف</Text>
+        </Pressable>
+        {categories.map(c => (
+          <Pressable
+            key={c.id}
+            onPress={() => onChange(c.id)}
+            style={[styles.chip, value === c.id && styles.chipActive]}>
+            <Text style={[styles.chipText, value === c.id && styles.chipTextActive]}>{c.name}</Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -83,4 +124,11 @@ const styles = StyleSheet.create({
   btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.sm },
   btnText: { color: colors.white, fontWeight: '800', fontSize: fontSize.md },
   error: { fontSize: fontSize.xs, color: colors.danger, marginTop: -spacing.sm, marginBottom: spacing.md },
+  chipsWrap: { marginBottom: spacing.md },
+  chipsLabel: { fontSize: fontSize.sm, fontWeight: '700', color: colors.text, marginBottom: 6 },
+  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  chip: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipText: { fontSize: fontSize.sm, color: colors.text },
+  chipTextActive: { color: colors.white, fontWeight: '700' },
 });

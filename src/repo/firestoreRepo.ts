@@ -32,6 +32,7 @@ import {
   SectionKey,
   Spec,
   Store,
+  StoreCategory,
   Subscription,
   User,
 } from '../types';
@@ -45,6 +46,7 @@ import {
   NewListingInput,
   NewProductInput,
   NewReviewInput,
+  NewStoreCategoryInput,
   NewStoreInput,
   NewSubscriptionInput,
   NewUserInput,
@@ -58,6 +60,7 @@ const C = {
   users: 'users',
   stores: 'stores',
   products: 'products',
+  storeCategories: 'store_categories',
   listings: 'listings',
   reviews: 'reviews',
   subscriptions: 'subscriptions',
@@ -159,6 +162,8 @@ function mapStore(id: string, d: Record<string, unknown>): Store {
     phone: str(d.phone),
     hours: str(d.hours),
     description: str(d.description),
+    coverImage: str(d.coverImage),
+    logoImage: str(d.logoImage),
     verified: d.verified === true,
     featured: d.featured === true,
   };
@@ -169,6 +174,7 @@ function mapProduct(id: string, d: Record<string, unknown>): Product {
     id,
     ownerUid: str(d.ownerUid),
     storeId: String(d.storeId ?? ''),
+    categoryId: str(d.categoryId),
     name: String(d.name ?? ''),
     price: numOrNull(d.price),
     description: String(d.description ?? ''),
@@ -176,6 +182,17 @@ function mapProduct(id: string, d: Record<string, unknown>): Product {
       ? d.images.filter(x => typeof x === 'string')
       : [],
     governorate: str(d.governorate),
+    createdAt: toMillis(d.createdAt),
+  };
+}
+
+function mapStoreCategory(id: string, d: Record<string, unknown>): StoreCategory {
+  return {
+    id,
+    ownerUid: str(d.ownerUid),
+    storeId: String(d.storeId ?? ''),
+    name: String(d.name ?? ''),
+    order: typeof d.order === 'number' ? d.order : 0,
     createdAt: toMillis(d.createdAt),
   };
 }
@@ -306,6 +323,7 @@ function mapDoctor(id: string, d: Record<string, unknown>): DoctorEntry {
     phone: String(d.phone ?? ''),
     days: String(d.days ?? ''),
     icon: String(d.icon ?? ''),
+    photo: str(d.photo),
   };
 }
 
@@ -317,6 +335,7 @@ function mapPharmacy(id: string, d: Record<string, unknown>): PharmacyEntry {
     area: String(d.area ?? ''),
     phone: String(d.phone ?? ''),
     hours: String(d.hours ?? ''),
+    photo: str(d.photo),
   };
 }
 
@@ -328,6 +347,7 @@ function mapLab(id: string, d: Record<string, unknown>): LabEntry {
     area: String(d.area ?? ''),
     phone: String(d.phone ?? ''),
     hours: String(d.hours ?? ''),
+    photo: str(d.photo),
   };
 }
 
@@ -352,6 +372,7 @@ export class FirestoreRepo implements Repository {
   private labs: LabEntry[];
   private subscriptions: Subscription[] = [];
   private products: Product[] = [];
+  private categories: StoreCategory[] = [];
   private announcements: Announcement[] = [];
   private banners: Banner[] = [];
   private featured: FeaturedRequest[] = [];
@@ -434,6 +455,9 @@ export class FirestoreRepo implements Repository {
         }),
         this.loadCollection(C.products, mapProduct, v => {
           this.products = v;
+        }),
+        this.loadCollection(C.storeCategories, mapStoreCategory, v => {
+          this.categories = v;
         }),
         this.loadCollection(C.announcements, mapAnnouncement, v => {
           this.announcements = v;
@@ -621,6 +645,101 @@ export class FirestoreRepo implements Repository {
     return store;
   }
 
+  updateStore(id: string, patch: Partial<Store>): void {
+    const s = this.stores.find(x => x.id === id);
+    if (s) {
+      Object.assign(s, patch);
+      this.emit();
+      // id وownerUid لا يُكتبان — الملكية ثابتة
+      const { id: _id, ownerUid: _ou, ...rest } = patch;
+      this.bg(
+        updateDoc(doc(this.db, C.stores, id), clean(rest)),
+        `updateStore ${id}`,
+      );
+      if (patch.coverImage !== undefined || patch.logoImage !== undefined) {
+        const fields: Partial<Record<'coverImage' | 'logoImage', 'single'>> = {};
+        if (patch.coverImage !== undefined) fields.coverImage = 'single';
+        if (patch.logoImage !== undefined) fields.logoImage = 'single';
+        this.syncImages(C.stores, this.stores, id, fields, 'stores');
+      }
+    }
+  }
+
+  // ——— تصنيفات داخل المتجر (v8) ———
+  getCategoriesByStore(storeId: string): StoreCategory[] {
+    return this.categories
+      .filter(c => c.storeId === storeId)
+      .sort((a, b) => a.order - b.order || a.createdAt - b.createdAt);
+  }
+
+  addCategory(input: NewStoreCategoryInput): StoreCategory {
+    const refDoc = doc(collection(this.db, C.storeCategories));
+    const siblings = this.categories.filter(c => c.storeId === input.storeId);
+    const maxOrder = siblings.reduce((m, c) => Math.max(m, c.order), -1);
+    const cat: StoreCategory = {
+      ...input,
+      id: refDoc.id,
+      ownerUid: currentOwnerUid(),
+      order: maxOrder + 1,
+      createdAt: Date.now(),
+    };
+    this.categories.push(cat);
+    this.emit();
+    this.bg(
+      setDoc(refDoc, clean(stripId(cat))),
+      `addCategory ${cat.id}`,
+    );
+    return cat;
+  }
+
+  updateCategory(id: string, name: string): void {
+    const c = this.categories.find(x => x.id === id);
+    if (c) {
+      c.name = name;
+      this.emit();
+      this.bg(
+        updateDoc(doc(this.db, C.storeCategories, id), { name }),
+        `updateCategory ${id}`,
+      );
+    }
+  }
+
+  deleteCategory(id: string): void {
+    const c = this.categories.find(x => x.id === id);
+    if (!c) return;
+    // منتجات التصنيف المحذوف تعود إلى «عام» (بلا تصنيف)
+    this.products.forEach(p => {
+      if (p.storeId === c.storeId && p.categoryId === id) {
+        delete p.categoryId;
+        this.bg(
+          updateDoc(doc(this.db, C.products, p.id), { categoryId: null }),
+          `deleteCategory unassign ${p.id}`,
+        );
+      }
+    });
+    this.categories = this.categories.filter(x => x.id !== id);
+    this.emit();
+    this.bg(
+      deleteDoc(doc(this.db, C.storeCategories, id)),
+      `deleteCategory ${id}`,
+    );
+  }
+
+  assignProductCategory(productId: string, categoryId?: string): void {
+    const p = this.products.find(x => x.id === productId);
+    if (p) {
+      if (categoryId) p.categoryId = categoryId;
+      else delete p.categoryId;
+      this.emit();
+      this.bg(
+        updateDoc(doc(this.db, C.products, productId), {
+          categoryId: categoryId ?? null,
+        }),
+        `assignProductCategory ${productId}`,
+      );
+    }
+  }
+
   // ——— تقييمات المتاجر ———
   getReviews(storeId: string): Review[] {
     return this.reviews
@@ -718,6 +837,7 @@ export class FirestoreRepo implements Repository {
     this.doctors.unshift(e);
     this.emit();
     this.bg(setDoc(refDoc, clean(stripId(e))), `addDoctor ${e.id}`);
+    this.syncImages(C.doctors, this.doctors, e.id, { photo: 'single' }, 'medical');
     return e;
   }
   updateDoctor(id: string, d: Doctor): void {
@@ -729,6 +849,7 @@ export class FirestoreRepo implements Repository {
         setDoc(doc(this.db, C.doctors, id), clean(d)),
         `updateDoctor ${id}`,
       );
+      this.syncImages(C.doctors, this.doctors, id, { photo: 'single' }, 'medical');
     }
   }
   deleteDoctor(id: string): void {
@@ -746,6 +867,7 @@ export class FirestoreRepo implements Repository {
     this.pharmacies.unshift(e);
     this.emit();
     this.bg(setDoc(refDoc, clean(stripId(e))), `addPharmacy ${e.id}`);
+    this.syncImages(C.pharmacies, this.pharmacies, e.id, { photo: 'single' }, 'medical');
     return e;
   }
   updatePharmacy(id: string, p: Pharmacy): void {
@@ -757,6 +879,7 @@ export class FirestoreRepo implements Repository {
         setDoc(doc(this.db, C.pharmacies, id), clean(p)),
         `updatePharmacy ${id}`,
       );
+      this.syncImages(C.pharmacies, this.pharmacies, id, { photo: 'single' }, 'medical');
     }
   }
   deletePharmacy(id: string): void {
@@ -774,6 +897,7 @@ export class FirestoreRepo implements Repository {
     this.labs.unshift(e);
     this.emit();
     this.bg(setDoc(refDoc, clean(stripId(e))), `addLab ${e.id}`);
+    this.syncImages(C.labs, this.labs, e.id, { photo: 'single' }, 'medical');
     return e;
   }
   updateLab(id: string, l: Lab): void {
@@ -782,6 +906,7 @@ export class FirestoreRepo implements Repository {
       this.labs[i] = { ...l, id };
       this.emit();
       this.bg(setDoc(doc(this.db, C.labs, id), clean(l)), `updateLab ${id}`);
+      this.syncImages(C.labs, this.labs, id, { photo: 'single' }, 'medical');
     }
   }
   deleteLab(id: string): void {

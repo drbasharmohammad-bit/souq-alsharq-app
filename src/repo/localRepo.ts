@@ -20,6 +20,7 @@ import {
   Product,
   Review,
   Store,
+  StoreCategory,
   Subscription,
   User,
 } from '../types';
@@ -33,6 +34,7 @@ import {
   NewListingInput,
   NewProductInput,
   NewReviewInput,
+  NewStoreCategoryInput,
   NewStoreInput,
   NewSubscriptionInput,
   NewUserInput,
@@ -54,6 +56,7 @@ export class LocalRepo implements Repository {
   private labs: LabEntry[];
   private subscriptions: Subscription[] = [];
   private products: Product[] = [];
+  private categories: StoreCategory[] = [];
   private announcements: Announcement[] = [];
   private banners: Banner[] = [];
   private featured: FeaturedRequest[] = [];
@@ -150,6 +153,62 @@ export class LocalRepo implements Repository {
     this.stores.unshift(store);
     this.emit();
     return store;
+  }
+
+  updateStore(id: string, patch: Partial<Store>): void {
+    const s = this.stores.find(x => x.id === id);
+    if (s) {
+      Object.assign(s, patch);
+      this.emit();
+    }
+  }
+
+  // ——— تصنيفات داخل المتجر (v8) ———
+  getCategoriesByStore(storeId: string): StoreCategory[] {
+    return this.categories
+      .filter(c => c.storeId === storeId)
+      .sort((a, b) => a.order - b.order || a.createdAt - b.createdAt);
+  }
+
+  addCategory(input: NewStoreCategoryInput): StoreCategory {
+    const siblings = this.categories.filter(c => c.storeId === input.storeId);
+    const maxOrder = siblings.reduce((m, c) => Math.max(m, c.order), -1);
+    const cat: StoreCategory = {
+      ...input,
+      id: nid('cat'),
+      order: maxOrder + 1,
+      createdAt: Date.now(),
+    };
+    this.categories.push(cat);
+    this.emit();
+    return cat;
+  }
+
+  updateCategory(id: string, name: string): void {
+    const c = this.categories.find(x => x.id === id);
+    if (c) {
+      c.name = name;
+      this.emit();
+    }
+  }
+
+  deleteCategory(id: string): void {
+    const c = this.categories.find(x => x.id === id);
+    if (!c) return;
+    this.products.forEach(p => {
+      if (p.storeId === c.storeId && p.categoryId === id) delete p.categoryId;
+    });
+    this.categories = this.categories.filter(x => x.id !== id);
+    this.emit();
+  }
+
+  assignProductCategory(productId: string, categoryId?: string): void {
+    const p = this.products.find(x => x.id === productId);
+    if (p) {
+      if (categoryId) p.categoryId = categoryId;
+      else delete p.categoryId;
+      this.emit();
+    }
   }
 
   // ——— تقييمات المتاجر ———

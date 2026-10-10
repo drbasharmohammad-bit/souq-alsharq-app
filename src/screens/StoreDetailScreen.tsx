@@ -62,6 +62,15 @@ export function StoreDetailScreen({ navigation, route }: Props) {
     () => (store ? repo.getProductsByStore(store.id) : []),
     [repo, store],
   );
+  const categories = useMemo(
+    () => (store ? repo.getCategoriesByStore(store.id) : []),
+    [repo, store],
+  );
+  const [selCat, setSelCat] = useState<string | null>(null);
+  const filteredProducts = useMemo(
+    () => (selCat ? products.filter(p => p.categoryId === selCat) : products),
+    [products, selCat],
+  );
   const avg = reviews.length
     ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
     : 0;
@@ -102,17 +111,34 @@ export function StoreDetailScreen({ navigation, route }: Props) {
   return (
     <ScrollView style={styles.root} showsVerticalScrollIndicator={false}>
       {/* الغلاف */}
-      <View style={[styles.cover, { backgroundColor: store.g1 }]}>
-        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={8}>
-          <AppIcon name="arrow-right" size={20} color={colors.primary} />
-        </Pressable>
-        <Text style={styles.coverName}>{store.name}</Text>
-      </View>
+      {store.coverImage ? (
+        <View style={styles.coverImgWrap}>
+          <Image
+            source={{ uri: store.coverImage }}
+            style={styles.coverImg}
+            resizeMode="cover"
+          />
+          <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={8}>
+            <AppIcon name="arrow-right" size={20} color={colors.primary} />
+          </Pressable>
+        </View>
+      ) : (
+        <View style={[styles.cover, { backgroundColor: store.g1 }]}>
+          <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={8}>
+            <AppIcon name="arrow-right" size={20} color={colors.primary} />
+          </Pressable>
+          <Text style={styles.coverName}>{store.name}</Text>
+        </View>
+      )}
 
       <View style={styles.head}>
-        <View style={[styles.logo, { backgroundColor: colors.gold }]}>
-          <Text style={styles.logoText}>{store.name.charAt(0)}</Text>
-        </View>
+        {store.logoImage ? (
+          <Image source={{ uri: store.logoImage }} style={styles.logoImg} resizeMode="cover" />
+        ) : (
+          <View style={[styles.logo, { backgroundColor: colors.gold }]}>
+            <Text style={styles.logoText}>{store.name.charAt(0)}</Text>
+          </View>
+        )}
         <View style={styles.nameRow}>
           <Text style={styles.name}>{store.name}</Text>
         </View>
@@ -187,11 +213,38 @@ export function StoreDetailScreen({ navigation, route }: Props) {
 
       {tab === 'products' && (
         <View style={styles.pane}>
-          {products.length === 0 ? (
-            <Text style={styles.empty}>لا توجد منتجات بعد</Text>
+          {categories.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.chipsRow}
+              contentContainerStyle={styles.chipsContent}>
+              <Pressable
+                style={[styles.chip, selCat === null && styles.chipActive]}
+                onPress={() => setSelCat(null)}>
+                <Text style={[styles.chipText, selCat === null && styles.chipTextActive]}>
+                  الكل
+                </Text>
+              </Pressable>
+              {categories.map(c => (
+                <Pressable
+                  key={c.id}
+                  style={[styles.chip, selCat === c.id && styles.chipActive]}
+                  onPress={() => setSelCat(c.id)}>
+                  <Text style={[styles.chipText, selCat === c.id && styles.chipTextActive]}>
+                    {c.name}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          )}
+          {filteredProducts.length === 0 ? (
+            <Text style={styles.empty}>
+              {selCat ? 'لا توجد منتجات في هذا التصنيف' : 'لا توجد منتجات بعد'}
+            </Text>
           ) : (
             <View style={styles.pgrid}>
-              {products.map(p => (
+              {filteredProducts.map(p => (
                 <Pressable
                   key={p.id}
                   style={styles.pcard}
@@ -291,12 +344,28 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', elevation: 2,
   },
   coverName: { color: colors.white, fontSize: 26, fontWeight: '800', textShadowColor: 'rgba(0,0,0,0.3)', textShadowRadius: 8 },
+  coverImgWrap: { height: 200 },
+  coverImg: { width: '100%', height: 200 },
   head: { paddingHorizontal: spacing.lg, marginTop: -34 },
   logo: {
     width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center',
     borderWidth: 4, borderColor: colors.white, elevation: 3,
   },
   logoText: { color: colors.white, fontSize: 30, fontWeight: '800' },
+  logoImg: {
+    width: 68, height: 68, borderRadius: 34,
+    borderWidth: 4, borderColor: colors.white, elevation: 3,
+    backgroundColor: colors.border,
+  },
+  chipsRow: { marginBottom: spacing.sm },
+  chipsContent: { flexDirection: 'row', gap: 8, paddingBottom: 2 },
+  chip: {
+    borderWidth: 1.5, borderColor: colors.primary, borderRadius: radius.pill,
+    paddingHorizontal: spacing.md, paddingVertical: 7, backgroundColor: colors.card,
+  },
+  chipActive: { backgroundColor: colors.primary },
+  chipText: { fontSize: fontSize.sm, fontWeight: '700', color: colors.primary },
+  chipTextActive: { color: colors.white },
   nameRow: { marginTop: 8 },
   name: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text },
   badgesRow: { flexDirection: 'row', gap: 6, marginTop: 6 },

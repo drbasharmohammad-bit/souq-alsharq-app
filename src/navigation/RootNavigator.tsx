@@ -25,6 +25,7 @@ import { DetailScreen } from '../screens/DetailScreen';
 import { ListingsScreen } from '../screens/ListingsScreen';
 import { MedicalScreen } from '../screens/MedicalScreen';
 import { AddProductScreen } from '../screens/merchant/AddProductScreen';
+import { EditStoreScreen } from '../screens/merchant/EditStoreScreen';
 import { FeaturedAdScreen } from '../screens/merchant/FeaturedAdScreen';
 import { StoreProductsScreen } from '../screens/merchant/StoreProductsScreen';
 import { MyAdsScreen } from '../screens/MyAdsScreen';
@@ -96,6 +97,7 @@ function AppRoot() {
               {/* منتجات التاجر */}
               <Stack.Screen name="StoreProducts" component={StoreProductsScreen} options={{ title: 'أصناف المتجر' }} />
               <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ title: 'إضافة صنف' }} />
+              <Stack.Screen name="EditStore" component={EditStoreScreen} options={{ title: 'تعديل المتجر' }} />
               <Stack.Screen name="FeaturedAd" component={FeaturedAdScreen} options={{ title: 'إعلان مميز' }} />
               {/* الاشتراك والإدارة */}
               <Stack.Screen name="Subscription" component={SubscriptionScreen} options={{ title: 'الاشتراك' }} />

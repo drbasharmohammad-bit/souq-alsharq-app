@@ -63,11 +63,22 @@ export interface Product {
   ownerUid?: string; // Firebase Auth uid للمالك
   id: string;
   storeId: string;
+  categoryId?: string; // تصنيف داخل المتجر ينشئه التاجر (v8)
   name: string;
   price: number | null;
   description: string;
   images: string[];
   governorate?: string;
+  createdAt: number;
+}
+
+/** تصنيف داخل منتجات المتجر — ينشئه التاجر بنفسه (v8) */
+export interface StoreCategory {
+  ownerUid?: string; // Firebase Auth uid للمالك
+  id: string;
+  storeId: string;
+  name: string;
+  order: number;
   createdAt: number;
 }
 
@@ -149,6 +160,8 @@ export interface Store {
   phone?: string;
   hours?: string;
   description?: string;
+  coverImage?: string; // صورة الغلاف — يرفعها التاجر (v8)
+  logoImage?: string; // شعار المتجر — يرفعه التاجر (v8)
   verified?: boolean;
   featured?: boolean;
 }
@@ -170,6 +183,7 @@ export interface Doctor {
   phone: string;
   days: string;
   icon: string;
+  photo?: string; // صورة — ترفعها الإدارة (v8)
 }
 
 export interface Pharmacy {
@@ -178,6 +192,7 @@ export interface Pharmacy {
   area: string;
   phone: string;
   hours: string;
+  photo?: string; // صورة — ترفعها الإدارة (v8)
 }
 
 export interface Lab {
@@ -186,4 +201,5 @@ export interface Lab {
   area: string;
   phone: string;
   hours: string;
+  photo?: string; // صورة — ترفعها الإدارة (v8)
 }

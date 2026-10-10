@@ -66,6 +66,13 @@ service cloud.firestore {
       allow update, delete: if ownsDoc() || isAdmin();
     }
 
+    // تصنيفات داخل المتجر — ينشئها التاجر (v8)
+    match /store_categories/{docId} {
+      allow read: if true;
+      allow create: if createsOwnDoc();
+      allow update, delete: if ownsDoc() || isAdmin();
+    }
+
     // ——— المستخدمون ———
     match /users/{uid} {
       allow read: if true;
