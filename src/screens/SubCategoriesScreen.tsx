@@ -1,7 +1,7 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { PlaceholderImage } from '../components/PlaceholderImage';
+import { SectionImage } from '../components/SectionImage';
 import { AppIcon } from '../components/AppIcon';
 import { SECTIONS, SUBCATS } from '../data';
 import { RootStackParamList } from '../navigation/types';
@@ -48,7 +48,7 @@ export function SubCategoriesScreen({ navigation, route }: Props) {
                 title: item.name,
               })
             }>
-            <PlaceholderImage icon={item.icon} color={item.g1} size={60} />
+            <SectionImage section={item} size={60} />
             <Text style={styles.name}>{item.name}</Text>
           </Pressable>
         )}

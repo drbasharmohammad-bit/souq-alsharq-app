@@ -21,6 +21,7 @@ export interface SubCategory {
   icon: string;
   g1: string;
   g2: string;
+  image?: number;
 }
 
 export type ListingKind = 'product' | 'car' | 'estate';

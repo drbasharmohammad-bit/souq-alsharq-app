@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { Image, ImageStyle, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { AppIcon } from './AppIcon';
-import type { Section } from '../types';
 
 // صورة القسم (مولدة بالذكاء الاصطناعي) — مربعة بحواف دائرية، مع fallback للأيقونة عند الفشل
+// يقبل Section أو SubCategory (كلاهما يحمل image/icon/g1)
 export function SectionImage({
   section,
   size = 64,
   style,
 }: {
-  section: Section;
+  section: { image?: number; icon: string; g1: string };
   size?: number;
   style?: ViewStyle;
 }) {
