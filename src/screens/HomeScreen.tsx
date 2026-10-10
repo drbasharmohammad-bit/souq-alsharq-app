@@ -189,12 +189,14 @@ export function HomeScreen({ navigation }: Props) {
   const renderStoreCard = (store: Store) => (
     <Pressable key={store.id} onPress={() => goStore(store.id)}>
       <View style={styles.storeCard}>
-        <View style={[styles.storeImgWrap, { backgroundColor: store.g1 + '1F' }]}>
+        <View style={styles.storeImgWrap}>
           <RemoteImage
             uri={store.logoImage}
-            style={styles.storeLogo}
+            style={styles.storeImg}
             fallback={
-              <PlaceholderImage icon={store.icon} color={store.g1} size={72} />
+              <View style={[styles.storeImgFallback, { backgroundColor: store.g1 + '1F' }]}>
+                <PlaceholderImage icon={store.icon} color={store.g1} size={72} />
+              </View>
             }
           />
           <View style={styles.storeBadge}>
@@ -513,17 +515,17 @@ const styles = StyleSheet.create({
   },
   storeImgWrap: {
     height: 118,
+  },
+  // صورة المتجر بملء البطاقة
+  storeImg: {
+    width: '100%',
+    height: '100%',
+  },
+  storeImgFallback: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  // الشعار المرفوع: دائري متداخل بنفس بصمة الـplaceholder
-  storeLogo: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    borderWidth: 4,
-    borderColor: colors.white,
-    elevation: 3,
   },
   storeBadge: {
     position: 'absolute',

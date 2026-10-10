@@ -48,7 +48,7 @@ export function SubCategoriesScreen({ navigation, route }: Props) {
                 title: item.name,
               })
             }>
-            <SectionImage section={item} size={140} style={{ width: '100%', aspectRatio: 1, borderRadius: 0 }} />
+            <SectionImage section={item} size={140} style={{ width: '100%', height: undefined, aspectRatio: 1, borderRadius: 0 }} />
             <Text style={styles.name}>{item.name}</Text>
           </Pressable>
         )}

@@ -6,13 +6,23 @@ import { colors, fontSize, radius, spacing } from '../theme';
 import { Listing } from '../types';
 import { AppIcon } from './AppIcon';
 import { PlaceholderImage } from './PlaceholderImage';
+import { RemoteImage } from './RemoteImage';
 
 function ListingCardRaw({ item, onPress }: { item: Listing; onPress: () => void }) {
   const { toggle, isFav } = useFavorites();
   const fav = isFav(item.id);
+  const photo = item.images?.[0];
   return (
     <Pressable style={styles.card} onPress={onPress} android_ripple={{ color: colors.border }}>
-      <PlaceholderImage icon={item.icon} color={item.g1} size={76} />
+      {photo ? (
+        <RemoteImage
+          uri={photo}
+          style={styles.thumb}
+          fallback={<PlaceholderImage icon={item.icon} color={item.g1} size={76} />}
+        />
+      ) : (
+        <PlaceholderImage icon={item.icon} color={item.g1} size={76} />
+      )}
       <View style={styles.body}>
         <View style={styles.row}>
           <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
@@ -53,6 +63,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 1,
   },
+  thumb: { width: 76, height: 76, borderRadius: radius.md, overflow: 'hidden' },
   body: { flex: 1, marginStart: spacing.md },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   name: { fontSize: fontSize.md, fontWeight: '700', color: colors.text, flex: 1 },
