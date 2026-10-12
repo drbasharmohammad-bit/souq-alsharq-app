@@ -136,6 +136,21 @@ export class LocalRepo implements Repository {
     }
   }
 
+  // تعديل الإعلان — عند تخفيض السعر يُحفظ القديم في previousPrice لشارة "انخفض السعر" (v22)
+  updateListing(id: string, patch: Partial<Listing>): void {
+    const l = this.listings.find(x => x.id === id);
+    if (!l) return;
+    if (patch.price !== undefined && patch.price !== l.price) {
+      if (l.price != null && patch.price != null && patch.price < l.price) {
+        l.previousPrice = l.price;
+      } else {
+        l.previousPrice = undefined;
+      }
+    }
+    Object.assign(l, patch);
+    this.emit();
+  }
+
   getUserListings(userId: string): Listing[] {
     return this.listings
       .filter(l => l.userId === userId)

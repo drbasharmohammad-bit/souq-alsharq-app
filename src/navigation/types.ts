@@ -28,6 +28,7 @@ export type RootStackParamList = {
   PublishForm: { sectionKey: string; subKey: string };
   PublishSuccess: undefined;
   MyAds: undefined;
+  EditAd: { listingId: string };
   // منتجات التاجر
   StoreProducts: undefined;
   AddProduct: undefined;

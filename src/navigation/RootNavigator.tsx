@@ -33,6 +33,7 @@ import { EditStoreScreen } from '../screens/merchant/EditStoreScreen';
 import { FeaturedAdScreen } from '../screens/merchant/FeaturedAdScreen';
 import { StoreProductsScreen } from '../screens/merchant/StoreProductsScreen';
 import { MyAdsScreen } from '../screens/MyAdsScreen';
+import { EditAdScreen } from '../screens/EditAdScreen';
 import { PublishFormScreen } from '../screens/publish/PublishFormScreen';
 import { PublishSectionScreen } from '../screens/publish/PublishSectionScreen';
 import { PublishSubScreen } from '../screens/publish/PublishSubScreen';
@@ -99,6 +100,7 @@ function AppRoot() {
               <Stack.Screen name="PublishForm" component={PublishFormScreen} options={{ title: 'تفاصيل الإعلان' }} />
               <Stack.Screen name="PublishSuccess" component={PublishSuccessScreen} options={{ title: 'تم الإرسال', headerLeft: () => null }} />
               <Stack.Screen name="MyAds" component={MyAdsScreen} options={{ title: 'إعلاناتي' }} />
+              <Stack.Screen name="EditAd" component={EditAdScreen} options={{ title: 'تعديل الإعلان' }} />
               {/* منتجات التاجر */}
               <Stack.Screen name="StoreProducts" component={StoreProductsScreen} options={{ title: 'أصناف المتجر' }} />
               <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ title: 'إضافة صنف' }} />

@@ -54,6 +54,7 @@ export interface Repository {
   getListingById(id: string): Listing | undefined;
   addListing(input: NewListingInput): Listing;
   updateListingStatus(id: string, status: AdStatus): void;
+  updateListing(id: string, patch: Partial<Listing>): void; // تعديل الإعلان — يتتبع انخفاض السعر (v22)
   deleteListing(id: string): void;
   getUserListings(userId: string): Listing[];
   // تمييز مدفوع على مستوى الإعلان (v15)

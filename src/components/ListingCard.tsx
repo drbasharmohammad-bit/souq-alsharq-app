@@ -12,6 +12,7 @@ function ListingCardRaw({ item, onPress }: { item: Listing; onPress: () => void 
   const { toggle, isFav } = useFavorites();
   const fav = isFav(item.id);
   const photo = item.images?.[0];
+  const dropped = item.previousPrice != null && item.price != null && item.previousPrice > item.price;
   return (
     <Pressable style={styles.card} onPress={onPress} android_ripple={{ color: colors.border }}>
       {photo ? (
@@ -31,6 +32,12 @@ function ListingCardRaw({ item, onPress }: { item: Listing; onPress: () => void 
           </Pressable>
         </View>
         <Text style={styles.price}>{formatPrice(item.price, item.priceNote)}</Text>
+        {dropped && (
+          <View style={styles.dropBadge}>
+            <AppIcon name="trending-down" size={13} color={colors.gold} />
+            <Text style={styles.dropBadgeText}>انخفض السعر</Text>
+          </View>
+        )}
         <View style={styles.metaRow}>
           <AppIcon name="map-marker" size={14} color={colors.textMuted} />
           <Text style={styles.meta} numberOfLines={1}>{item.gov} - {item.area}</Text>
@@ -68,6 +75,20 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   name: { fontSize: fontSize.md, fontWeight: '700', color: colors.text, flex: 1 },
   price: { fontSize: fontSize.md, fontWeight: '700', color: colors.primary, marginTop: 2 },
+  dropBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFF8E1',
+    borderWidth: 1,
+    borderColor: colors.gold,
+    borderRadius: radius.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginTop: 4,
+  },
+  dropBadgeText: { fontSize: fontSize.xs, fontWeight: '800', color: '#7A5A12' },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   meta: { fontSize: fontSize.sm, color: colors.textMuted, flex: 1 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 2, marginTop: 6 },

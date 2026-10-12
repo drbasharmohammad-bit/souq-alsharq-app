@@ -42,6 +42,7 @@ export interface Listing {
   name: string;
   price: number | null;
   priceNote?: string;
+  previousPrice?: number | null; // السعر قبل التخفيض — لشارة "انخفض السعر" (v22)
   gov: string;
   area: string;
   sec: SectionKey;

@@ -5,6 +5,7 @@ import {
   Linking,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -115,6 +116,19 @@ export function StoreDetailScreen({ navigation, route }: Props) {
         <View style={styles.heroShade} />
         <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={8}>
           <AppIcon name="arrow-right" size={20} color={colors.primary} />
+        </Pressable>
+        <Pressable
+          style={styles.shareBtn}
+          hitSlop={8}
+          onPress={() => {
+            const msg =
+              `متجر: ${store.name}\n` +
+              `${store.gov} • ${store.area}\n` +
+              (store.phone ? `للتواصل: ${store.phone}\n` : '') +
+              `حمّل تطبيق HDR — حسكتك، ديرتك، رقتك... بتطبيق واحد`;
+            Share.share({ message: msg }).catch(() => {});
+          }}>
+          <AppIcon name="share-variant" size={20} color={colors.primary} />
         </Pressable>
         <View style={styles.heroContent}>
           {store.logoImage ? (
@@ -407,6 +421,11 @@ const styles = StyleSheet.create({
   heroRatingText: { fontSize: fontSize.sm, color: 'rgba(255,255,255,0.9)' },
   backBtn: {
     position: 'absolute', top: 50, right: 14, width: 36, height: 36, borderRadius: 18,
+    backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', elevation: 2,
+    zIndex: 2,
+  },
+  shareBtn: {
+    position: 'absolute', top: 50, left: 14, width: 36, height: 36, borderRadius: 18,
     backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', elevation: 2,
     zIndex: 2,
   },

@@ -66,6 +66,12 @@ export function MyAdsScreen({ navigation }: Props) {
                   <AppIcon name={m.icon} size={14} color={m.fg} />
                   <Text style={[styles.badgeText, { color: m.fg }]}>{m.t}</Text>
                 </View>
+                <Pressable
+                  style={styles.editBtn}
+                  onPress={() => navigation.navigate('EditAd', { listingId: item.id })}>
+                  <AppIcon name="pencil" size={14} color={colors.primary} />
+                  <Text style={styles.editBtnText}>تعديل</Text>
+                </Pressable>
                 {item.status === 'approved' && (
                   isFeatured ? (
                     <View style={[styles.badge, styles.featBadge]}>
@@ -124,6 +130,18 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   badgeText: { fontSize: fontSize.xs, fontWeight: '800' },
+  editBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderRadius: radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    backgroundColor: colors.white,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+  },
+  editBtnText: { fontSize: fontSize.xs, fontWeight: '800', color: colors.primary },
   featBadge: { backgroundColor: '#FFF8E1', borderWidth: 1, borderColor: colors.gold },
   featBtn: {
     flexDirection: 'row',

@@ -2,6 +2,7 @@ import { getAuth } from '@react-native-firebase/auth';
 import {
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -222,6 +223,7 @@ function mapListing(id: string, d: Record<string, unknown>): Listing {
     name: String(d.name ?? ''),
     price: numOrNull(d.price),
     priceNote: str(d.priceNote),
+    previousPrice: numOrNull(d.previousPrice),
     gov: String(d.gov ?? ''),
     area: String(d.area ?? ''),
     sec: (d.sec as SectionKey) ?? 'malls',
@@ -735,6 +737,27 @@ export class FirestoreRepo implements Repository {
         `updateListingStatus ${id}`,
       );
     }
+  }
+
+  // تعديل الإعلان — عند تخفيض السعر يُحفظ القديم في previousPrice لشارة "انخفض السعر" (v22)
+  updateListing(id: string, patch: Partial<Listing>): void {
+    const l = this.listings.find(x => x.id === id);
+    if (!l) return;
+    let clearPrev = false;
+    if (patch.price !== undefined && patch.price !== l.price) {
+      if (l.price != null && patch.price != null && patch.price < l.price) {
+        patch = { ...patch, previousPrice: l.price };
+      } else {
+        patch = { ...patch, previousPrice: undefined };
+        clearPrev = true;
+      }
+    }
+    Object.assign(l, patch);
+    this.emit();
+    const { id: _drop, ...data } = patch as Partial<Listing> & { id?: string };
+    const payload: Record<string, unknown> = clean(data);
+    if (clearPrev) payload.previousPrice = deleteField();
+    this.bg(updateDoc(doc(this.db, C.listings, id), payload), `updateListing ${id}`);
   }
 
   getUserListings(userId: string): Listing[] {

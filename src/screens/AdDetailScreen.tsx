@@ -6,6 +6,7 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -107,6 +108,17 @@ export function AdDetailScreen({ navigation, route }: Props) {
     else showToast('صفحة المتجر غير متوفرة');
   };
 
+  // مشاركة الإعلان كنص (v22)
+  const shareAd = () => {
+    const priceText = price != null ? formatPrice(price, priceNote) : 'السعر عند الاتصال';
+    const msg =
+      `إعلان: ${title}\n` +
+      `السعر: ${priceText}\n` +
+      (sellerPhone ? `للتواصل: ${sellerPhone}\n` : '') +
+      `حمّل تطبيق HDR — حسكتك، ديرتك، رقتك... بتطبيق واحد`;
+    Share.share({ message: msg }).catch(() => {});
+  };
+
   return (
     <ScrollView style={styles.root} showsVerticalScrollIndicator={false}>
       {/* معرض الصور */}
@@ -148,11 +160,23 @@ export function AdDetailScreen({ navigation, route }: Props) {
           />
         </Pressable>
       )}
+      <Pressable style={styles.shareBtn} onPress={shareAd} hitSlop={8}>
+        <AppIcon name="share-variant" size={20} color={colors.primary} />
+      </Pressable>
 
       <View style={styles.body}>
         <View style={styles.priceRow}>
           <Text style={styles.price}>{formatPrice(price, priceNote)}</Text>
         </View>
+        {listing && listing.previousPrice != null && listing.price != null && listing.previousPrice > listing.price && (
+          <View style={styles.dropRow}>
+            <View style={styles.dropBadge}>
+              <AppIcon name="trending-down" size={14} color={colors.gold} />
+              <Text style={styles.dropBadgeText}>انخفض السعر</Text>
+            </View>
+            <Text style={styles.oldPrice}>{formatPrice(listing.previousPrice, undefined)}</Text>
+          </View>
+        )}
         <Text style={styles.title}>{title}</Text>
         <View style={styles.metaRow}>
           <AppIcon name="map-marker" size={14} color={colors.textMuted} />
@@ -358,6 +382,10 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 50, left: 14, width: 36, height: 36, borderRadius: 18,
     backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', elevation: 2,
   },
+  shareBtn: {
+    position: 'absolute', top: 94, left: 14, width: 36, height: 36, borderRadius: 18,
+    backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', elevation: 2,
+  },
   body: { padding: spacing.lg, backgroundColor: colors.white, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, marginTop: -spacing.lg },
   priceRow: {
     alignSelf: 'flex-start',
@@ -367,6 +395,20 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   price: { fontSize: 30, fontWeight: '800', color: colors.primary },
+  dropRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  dropBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFF8E1',
+    borderWidth: 1,
+    borderColor: colors.gold,
+    borderRadius: radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  dropBadgeText: { fontSize: fontSize.sm, fontWeight: '800', color: '#7A5A12' },
+  oldPrice: { fontSize: fontSize.md, color: colors.textMuted, textDecorationLine: 'line-through' },
   title: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text, marginTop: 8 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 },
   meta: { fontSize: fontSize.sm, color: colors.textMuted, flex: 1 },
