@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       SHARQ_STORE_PASSWORD: ${{ secrets.SHARQ_STORE_PASSWORD }}
       SHARQ_KEY_PASSWORD: ${{ secrets.SHARQ_KEY_PASSWORD }}
